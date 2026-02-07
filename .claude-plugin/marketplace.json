@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0",
+  "name": "dz-ai",
+  "owner": {
+    "name": "DotZero",
+    "email": "support@dotzero.app"
+  },
+  "metadata": {
+    "description": "DotZero Manufacturing Execution System (MES) integration tools"
+  },
+  "plugins": [
+    {
+      "name": "dotzero",
+      "source": "./",
+      "description": "Full DotZero Plugin (MCP Servers + Skills)",
+      "version": "1.0.0"
+    },
+    {
+      "name": "dotzero-skills",
+      "source": "./skills-only",
+      "description": "Cross-platform DotZero Skills (REST API only, no MCP required)",
+      "version": "1.0.0",
+      "strict": false
+    }
+  ],
+  "listing": {
+    "name": "DotZero AI Tools",
+    "shortDescription": "MCP servers and skills for DotZero manufacturing systems",
+    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes Work Order API integration for managing production work orders, products, workers, routes, operations, devices, quality control, warehouse, and WMS. Offers both native MCP integration (98 tools) and cross-platform REST API skills.",
+    "category": "enterprise",
+    "subcategory": "manufacturing",
+    "icon": "factory",
+    "screenshots": [],
+    "tags": [
+      "manufacturing",
+      "mes",
+      "work-orders",
+      "production",
+      "enterprise",
+      "api-integration",
+      "cross-platform"
+    ]
+  },
+  "pricing": {
+    "type": "free"
+  },
+  "support": {
+    "documentation": "https://github.com/dotzero-ai/dz-ai/blob/main/README.md",
+    "issues": "https://github.com/dotzero-ai/dz-ai/issues"
+  },
+  "compatibility": {
+    "claudeCode": ">=1.0.0",
+    "node": ">=18"
+  },
+  "stats": {
+    "totalTools": 98,
+    "skills": 2
+  },
+  "features": [
+    {
+      "title": "Dual-Track Architecture",
+      "description": "Choose between native MCP integration (98 tools) or cross-platform REST API skills"
+    },
+    {
+      "title": "Work Order Management",
+      "description": "Create, read, update, and delete work orders with full filtering and pagination"
+    },
+    {
+      "title": "Product & Route Management",
+      "description": "Manage products, production routes, and route operations"
+    },
+    {
+      "title": "Operation Tracking",
+      "description": "Track operation history, generate reports, and view analytics"
+    },
+    {
+      "title": "Quality Control",
+      "description": "Manage defect reasons, abnormal history, and quality categories"
+    },
+    {
+      "title": "Warehouse & WMS",
+      "description": "Warehouse management, storage locations, inventory checks, and stock monitoring"
+    },
+    {
+      "title": "Token Management",
+      "description": "Automatic token storage and refresh via .dotzero/ directory"
+    }
+  ]
+}

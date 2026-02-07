@@ -1,0 +1,117 @@
+# DotZero AI Tools
+
+> MCP servers and skills for DotZero manufacturing execution systems (MES)
+
+## Quick Start
+
+1. Install: `npx @dotzero.ai/setup`
+2. Restart Claude Code
+3. Authenticate: `auth_login(email, password, tenant_id)`
+4. Use tools: `workorder_list()`, `product_list()`, etc.
+
+## Available MCP Tools (98)
+
+### Authentication (2)
+- `auth_login` - Login with email/password/tenant_id
+- `auth_status` - Check authentication status
+
+### Work Orders (7)
+- `workorder_list` - List with filters (status, date range, rush)
+- `workorder_get` - Get by ID/UUID
+- `workorder_create` - Create new work order
+- `workorder_update` - Update existing
+- `workorder_delete` - Delete by UUID
+- `workorder_details` - Full details with product and operations
+- `workorder_count` - Get total count
+
+### Products (6)
+- `product_list` - List with filters (name, number, category)
+- `product_get` - Get by UUID
+- `product_create` - Create new product
+- `product_update` - Update existing
+- `product_details` - Full details
+- `product_copy` - Copy product
+
+### Workers (5)
+- `worker_list` - List with filters
+- `worker_get` - Get by UUID
+- `worker_create` - Create worker
+- `worker_update` - Update worker
+- `worker_delete` - Delete worker
+
+### Operation History (7)
+- `operation_history_list` - List with filters
+- `operation_history_get` - Get by UUID
+- `operation_history_create` - Create record
+- `operation_history_create_many` - Batch create
+- `operation_history_delete` - Delete record
+- `operation_history_by_workorder` - Get by work order
+- `operation_history_timeline` - Timeline view
+
+### Reports & Analytics (5)
+- `workorder_report` - Work order report
+- `report_update` - Update report
+- `weekly_report` - Weekly summary
+- `analytics_operations` - Operation analytics
+- `analytics_workorder_report` - Work order analytics
+
+### Routes (7)
+- `route_list`, `route_get`, `route_create`, `route_update`, `route_delete`
+- `route_by_product` - Routes for a product
+- `route_copy` - Copy route
+
+### Operations (5)
+- `operation_list`, `operation_get`, `operation_create`, `operation_update`, `operation_delete`
+
+### Route Operations (6)
+- `route_operation_list`, `route_operation_get`, `route_operation_create`
+- `route_operation_update`, `route_operation_delete`, `route_operation_by_route`
+
+### Devices (5)
+- `device_list`, `device_get`, `device_create`, `device_update`, `device_delete`
+
+### Stations (6)
+- `station_list`, `station_get`, `station_create`, `station_update`, `station_delete`
+- `station_device_list`
+
+### Quality (12)
+- Defect Reasons: `defect_reason_list`, `defect_reason_create`, `defect_reason_update`, `defect_reason_delete`
+- Defect Categories: `defect_reason_category_list`, `defect_reason_category_get`, `defect_reason_category_create`, `defect_reason_category_update`
+- Op Product BOM: `op_product_bom_list`, `op_product_bom_create`, `op_product_bom_update`, `op_product_bom_delete`
+
+### Abnormal (9)
+- History: `abnormal_history_list`, `abnormal_history_get`, `abnormal_history_create`, `abnormal_history_update`, `abnormal_history_by_workorder`
+- Config: `abnormal_category_list`, `abnormal_category_create`, `abnormal_state_list`, `abnormal_state_create`
+
+### Warehouse & WMS (15)
+- Warehouses: `warehouse_list`, `warehouse_get`, `warehouse_create`, `warehouse_update`
+- Storage: `warehouse_storage_list`, `warehouse_storage_get`, `warehouse_storage_create`, `warehouse_storage_update`
+- Product Storage: `product_storage_list`, `product_storage_get`, `product_storage_by_product`
+- WMS: `wms_check_inventory`, `wms_query_product_storage`, `wms_query_storage_history`, `wms_minimal_stock_count`
+
+## Work Order Status
+
+| Value | Status |
+|-------|--------|
+| 1 | Not Started |
+| 2 | In Progress |
+| 3 | Completed |
+| 4 | Incomplete |
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| WORK_ORDER_API_URL | Yes | Work Order API base URL |
+| USER_API_URL | No | Auth API URL (has default) |
+
+## npm Packages
+
+- `@dotzero.ai/auth-mcp` - Authentication MCP server
+- `@dotzero.ai/work-order-mcp` - Work Order MCP server
+- `@dotzero.ai/setup` - One-command setup CLI
+
+## Source
+
+- Repository: https://github.com/dotzero-ai/dz-ai
+- Website: https://dotzero.app

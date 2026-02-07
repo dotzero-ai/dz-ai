@@ -1,0 +1,39 @@
+{
+  "name": "dotzero-skills",
+  "version": "1.0.0",
+  "description": "DotZero cross-platform Skills (REST API only, no MCP required). Works with any AI Agent that supports curl/WebFetch.",
+  "author": {
+    "name": "DotZero",
+    "email": "support@dotzero.app",
+    "url": "https://dotzero.app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dotzero-ai/dz-ai"
+  },
+  "keywords": [
+    "work-order",
+    "mes",
+    "manufacturing",
+    "production",
+    "api",
+    "cross-platform",
+    "rest-api"
+  ],
+  "license": "MIT",
+  "skills": [
+    {
+      "name": "dotzero-auth",
+      "path": "skills/dotzero-auth/SKILL.md",
+      "description": "Cross-platform authentication for DotZero services (REST API)"
+    },
+    {
+      "name": "dotzero-workorder",
+      "path": "skills/dotzero-workorder/SKILL.md",
+      "description": "Cross-platform work order management (REST API)"
+    }
+  ],
+  "documentation": {
+    "readme": "../README.md"
+  }
+}

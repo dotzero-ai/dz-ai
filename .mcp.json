@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "dotzero-auth": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/auth-mcp"],
+      "env": {
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    },
+    "dotzero-workorder": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/work-order-mcp"],
+      "env": {
+        "WORK_ORDER_API_URL": "https://work-order-api.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    }
+  }
+}
