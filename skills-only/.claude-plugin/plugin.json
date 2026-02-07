@@ -7,10 +7,9 @@
     "email": "support@dotzero.app",
     "url": "https://dotzero.app"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dotzero-ai/dz-ai"
-  },
+  "repository": "https://github.com/dotzero-ai/dz-ai",
+  "homepage": "https://dotzero.app",
+  "license": "SEE LICENSE IN LICENSE",
   "keywords": [
     "work-order",
     "mes",
@@ -20,20 +19,5 @@
     "cross-platform",
     "rest-api"
   ],
-  "license": "SEE LICENSE IN LICENSE",
-  "skills": [
-    {
-      "name": "dotzero-auth",
-      "path": "skills/dotzero-auth/SKILL.md",
-      "description": "Cross-platform authentication for DotZero services (REST API)"
-    },
-    {
-      "name": "dotzero-workorder",
-      "path": "skills/dotzero-workorder/SKILL.md",
-      "description": "Cross-platform work order management (REST API)"
-    }
-  ],
-  "documentation": {
-    "readme": "../README.md"
-  }
+  "skills": "./skills/"
 }

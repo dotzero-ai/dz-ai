@@ -7,10 +7,9 @@
     "email": "support@dotzero.app",
     "url": "https://dotzero.app"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dotzero-ai/dz-ai"
-  },
+  "repository": "https://github.com/dotzero-ai/dz-ai",
+  "homepage": "https://dotzero.app",
+  "license": "SEE LICENSE IN LICENSE",
   "keywords": [
     "mcp",
     "work-order",
@@ -22,42 +21,6 @@
     "authentication",
     "cross-platform"
   ],
-  "license": "SEE LICENSE IN LICENSE",
-  "engines": {
-    "node": ">=18"
-  },
-  "mcpServers": {
-    "dotzero-auth": {
-      "command": "npx",
-      "args": ["-y", "@dotzero.ai/auth-mcp"],
-      "env": {
-        "USER_API_URL": "https://user-api.dotzero.app"
-      },
-      "description": "DotZero centralized authentication MCP server"
-    },
-    "dotzero-workorder": {
-      "command": "npx",
-      "args": ["-y", "@dotzero.ai/work-order-mcp"],
-      "env": {
-        "WORK_ORDER_API_URL": "https://work-order-api.dotzero.app",
-        "USER_API_URL": "https://user-api.dotzero.app"
-      },
-      "description": "Work Order API MCP Server for manufacturing execution systems (98 tools)"
-    }
-  },
-  "skills": [
-    {
-      "name": "dotzero-auth",
-      "path": "skills/dotzero-auth/SKILL.md",
-      "description": "Cross-platform authentication for DotZero services (REST API)"
-    },
-    {
-      "name": "dotzero-workorder",
-      "path": "skills/dotzero-workorder/SKILL.md",
-      "description": "Cross-platform work order management (REST API)"
-    }
-  ],
-  "documentation": {
-    "readme": "README.md"
-  }
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
 }
