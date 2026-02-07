@@ -139,7 +139,7 @@ Credentials are stored in `.dotzero/credentials.json` (auto-created on login).
 
 ## License
 
-MIT
+Proprietary. See [LICENSE](LICENSE) for details.
 
 ## Support
 
