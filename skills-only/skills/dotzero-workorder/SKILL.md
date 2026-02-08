@@ -542,6 +542,9 @@ curl -s "${API_URL}/v1/workOrders" \
 | Weekly report | GET | `/v1/report/weeklyReport` |
 | Analytics operations | GET | `/v1/analytics/operations` |
 | Analytics WO report | GET | `/v1/analytics/workOrderReport` |
+| Worker efficiency ranking | MCP | `worker_efficiency_ranking` (MCP aggregation tool, no direct curl) |
+| Device utilization ranking | MCP | `device_utilization_ranking` (MCP aggregation tool, no direct curl) |
+| Production summary | MCP | `production_summary` (MCP aggregation tool, no direct curl) |
 
 ### Devices & Stations
 
