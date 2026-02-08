@@ -13,20 +13,20 @@
       "name": "dotzero",
       "source": "./",
       "description": "Full DotZero Plugin (MCP Servers + Skills)",
-      "version": "1.0.0"
+      "version": "2.0.0"
     },
     {
       "name": "dotzero-skills",
       "source": "./skills-only",
       "description": "Cross-platform DotZero Skills (REST API only, no MCP required)",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "strict": false
     }
   ],
   "listing": {
     "name": "DotZero AI Tools",
     "shortDescription": "MCP servers and skills for DotZero manufacturing systems",
-    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes Work Order API integration for managing production work orders, products, workers, routes, operations, devices, quality control, warehouse, and WMS. Offers both native MCP integration (98 tools) and cross-platform REST API skills.",
+    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes 7 MCP servers with 217 tools covering Work Order management, SPC quality control, Equipment monitoring, Device Topology, and OEE analysis. Offers both native MCP integration and cross-platform REST API skills for any AI agent.",
     "category": "enterprise",
     "subcategory": "manufacturing",
     "icon": "factory",
@@ -35,6 +35,10 @@
       "manufacturing",
       "mes",
       "work-orders",
+      "spc",
+      "equipment",
+      "oee",
+      "device-topology",
       "production",
       "enterprise",
       "api-integration",
@@ -53,33 +57,33 @@
     "node": ">=18"
   },
   "stats": {
-    "totalTools": 98,
-    "skills": 2
+    "totalTools": 217,
+    "skills": 10
   },
   "features": [
     {
       "title": "Dual-Track Architecture",
-      "description": "Choose between native MCP integration (98 tools) or cross-platform REST API skills"
+      "description": "Choose between native MCP integration (217 tools) or cross-platform REST API skills"
     },
     {
       "title": "Work Order Management",
-      "description": "Create, read, update, and delete work orders with full filtering and pagination"
+      "description": "98 tools for work orders, products, routes, operations, devices, quality, warehouse, WMS"
     },
     {
-      "title": "Product & Route Management",
-      "description": "Manage products, production routes, and route operations"
+      "title": "SPC Quality Control",
+      "description": "41 tools for measurement configs, inspection data, control charts, process capability (Cp/Cpk)"
     },
     {
-      "title": "Operation Tracking",
-      "description": "Track operation history, generate reports, and view analytics"
+      "title": "Equipment Monitoring",
+      "description": "12 tools for real-time machine status, alarms, idle time, part counts, state aggregations"
     },
     {
-      "title": "Quality Control",
-      "description": "Manage defect reasons, abnormal history, and quality categories"
+      "title": "Device Topology",
+      "description": "37 tools for managing factory hierarchy — groups, factories, lines, devices, plant floors, alarms"
     },
     {
-      "title": "Warehouse & WMS",
-      "description": "Warehouse management, storage locations, inventory checks, and stock monitoring"
+      "title": "OEE Analysis",
+      "description": "20 tools for availability, quality, performance, and combined OEE at device/line/factory levels"
     },
     {
       "title": "Token Management",

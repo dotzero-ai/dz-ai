@@ -14,6 +14,38 @@
         "WORK_ORDER_API_URL": "https://work-order-api.dotzero.app",
         "USER_API_URL": "https://user-api.dotzero.app"
       }
+    },
+    "dotzero-spc": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/spc-mcp"],
+      "env": {
+        "SPC_API_URL": "https://dotzerotech-spc-backend.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    },
+    "dotzero-equipment": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/equipment-mcp"],
+      "env": {
+        "EQUIPMENT_API_URL": "https://dotzerotech-equipment-api.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    },
+    "dotzero-device-topology": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/device-topology-mcp"],
+      "env": {
+        "DEVICE_TOPOLOGY_API_URL": "https://dotzerotech-device-topology.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    },
+    "dotzero-oee": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/oee-mcp"],
+      "env": {
+        "OEE_API_URL": "https://dotzerotech-oee-api.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
     }
   }
 }

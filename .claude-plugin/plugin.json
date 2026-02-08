@@ -1,7 +1,7 @@
 {
   "name": "dotzero",
-  "version": "1.0.0",
-  "description": "DotZero Manufacturing Execution System (MES) - Work order management, product catalog, operation tracking. Includes MCP Servers and cross-platform Skills.",
+  "version": "2.0.0",
+  "description": "DotZero Manufacturing Execution System (MES) - Work orders, SPC quality, equipment monitoring, device topology, OEE analysis. Includes MCP Servers and cross-platform Skills.",
   "author": {
     "name": "DotZero",
     "email": "support@dotzero.app",
@@ -13,9 +13,14 @@
   "keywords": [
     "mcp",
     "work-order",
+    "spc",
+    "equipment",
+    "device-topology",
+    "oee",
     "mes",
     "manufacturing",
     "production",
+    "quality-control",
     "api",
     "claude-code",
     "authentication",
