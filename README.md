@@ -13,7 +13,7 @@ After setup, restart Claude Code and run `auth_login` to authenticate.
 
 ## What's Included
 
-### MCP Servers (217 tools)
+### MCP Servers (231 tools)
 
 | Server | Package | Tools | Description |
 |--------|---------|-------|-------------|
@@ -23,6 +23,7 @@ After setup, restart Claude Code and run `auth_login` to authenticate.
 | dotzero-equipment | `@dotzero.ai/equipment-mcp` | 12 | Real-time machine status, alarms, idle time, part counts |
 | dotzero-device-topology | `@dotzero.ai/device-topology-mcp` | 37 | Factory/line/device hierarchy, plant floors, alarm codes |
 | dotzero-oee | `@dotzero.ai/oee-mcp` | 20 | Availability, quality, performance, OEE at device/line/factory |
+| dotzero-export | `@dotzero.ai/export-mcp` | 14 | Chart generation (PNG/JPG) and data export (CSV/XLSX), no auth required |
 
 ### Cross-Platform Skills (REST API)
 
@@ -36,6 +37,7 @@ Works with any AI Agent that supports curl/WebFetch, no MCP required:
 | `dotzero-equipment` | Equipment monitoring |
 | `dotzero-device-topology` | Device topology management |
 | `dotzero-oee` | OEE analysis |
+| `dotzero-export` | Chart generation and data export (no auth required) |
 
 ## Installation Options
 
@@ -90,6 +92,11 @@ claude mcp add dotzero-oee \
   --args "-y" "@dotzero.ai/oee-mcp" \
   --env "OEE_API_URL=https://dotzerotech-oee-api.dotzero.app" \
   --env "USER_API_URL=https://user-api.dotzero.app"
+
+# Export (no env vars needed)
+claude mcp add dotzero-export \
+  --command "npx" \
+  --args "-y" "@dotzero.ai/export-mcp"
 ```
 
 ### Option 3: Skills Only (No MCP)
@@ -109,12 +116,16 @@ auth_login(email: "user@example.com", password: "password", tenant_id: "your-ten
 ### Using Scripts
 
 ```bash
+# Secure mode (password prompted, not saved in shell history)
+./scripts/dotzero-login.sh user@example.com your-tenant-id
+
+# Legacy mode (password visible in history)
 ./scripts/dotzero-login.sh user@example.com password your-tenant-id
 ```
 
 ### Token Management
 
-Credentials are stored in `.dotzero/credentials.json` (auto-created on login).
+Credentials are stored in `.dotzero/credentials.json` (auto-created on login, permissions set to owner-only).
 
 ```bash
 # Get valid token (auto-refresh if expired)
@@ -463,6 +474,83 @@ Credentials are stored in `.dotzero/credentials.json` (auto-created on login).
 
 ---
 
+### 圖表與匯出 (Charts & Export)
+
+export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZero 服務取得資料後，用 export-mcp 產出圖表或匯出檔案。
+
+#### 21. OEE 分解圖
+
+> **你可以這樣問：** 「幫我畫 CNC-01 的 OEE 分解圖」
+>
+> **AI 會做的事：** 先呼叫 `oee_device` 取得 OEE 數據（JSON），再呼叫 `chart_oee_breakdown` 產生圖表
+>
+> **回覆範例：**
+> 已產生 OEE 分解圖：
+> - 稼動率：92.5%
+> - 良率：97.8%
+> - 效能：88.3%
+> - OEE：79.9%
+> - 圖表已儲存至 `.dotzero/exports/chart-oee-breakdown-2026-02-08T14-30-00.png`
+>
+> （附帶 PNG 圖片）
+
+#### 22. SPC 管制圖
+
+> **你可以這樣問：** 「畫一張外徑的 SPC 管制圖」
+>
+> **AI 會做的事：** 呼叫 `spc_measure_history_manufacture` 取得量測值，呼叫 `spc_statistics_capability` 取得 UCL/CL/LCL，再呼叫 `chart_control` 產生管制圖
+>
+> **回覆範例：**
+> 已產生管制圖（30 個量測點）：
+> - UCL：50.15  CL：50.00  LCL：49.85
+> - 2 個點超出管制上限（以紅色標示）
+> - 圖表已儲存至 `.dotzero/exports/chart-control-chart-2026-02-08T14-35-00.png`
+
+#### 23. 匯出工單到 Excel
+
+> **你可以這樣問：** 「把這週的工單匯出成 Excel」
+>
+> **AI 會做的事：** 呼叫 `workorder_list` 取得工單資料（JSON），再呼叫 `export_table_from_json` 自動轉為 XLSX
+>
+> **回覆範例：**
+> 已匯出 15 筆工單至 Excel：
+> - 檔案：`.dotzero/exports/export-workorders-2026-02-08T14-40-00.xlsx`
+> - 欄位：工單編號、產品、數量、狀態、開始時間、交期
+
+#### 24. 生產數據 CSV 匯出
+
+> **你可以這樣問：** 「把產量統計匯出成 CSV」
+>
+> **AI 會做的事：** 呼叫 `production_summary` 取得數據，再呼叫 `export_csv` 或 `export_table_from_json` 產生 CSV
+>
+> **回覆範例：**
+> 已匯出 42 筆產量數據至 CSV：
+> - 檔案：`.dotzero/exports/export-production-summary-2026-02-08T14-45-00.csv`
+
+#### 25. 多圖表儀表板
+
+> **你可以這樣問：** 「幫我做一張包含 OEE 儀表、產量長條圖、不良品圓餅圖的 dashboard」
+>
+> **AI 會做的事：** 呼叫 `chart_multi` 產生多圖表組合
+>
+> **回覆範例：**
+> 已產生 Dashboard（3 張圖表，grid 排列）：
+> 1. OEE 儀表：78.5%
+> 2. 產量長條圖：Line A 1,200 / Line B 980 / Line C 1,150
+> 3. 不良品分佈：表面瑕疵 45% / 尺寸偏差 30% / 其他 25%
+
+#### 26. 自動圖表（JSON 智慧偵測）
+
+> **你可以這樣問：** 「把剛才的數據畫成圖表」
+>
+> **AI 會做的事：** 呼叫 `chart_from_json`，自動偵測資料格式並選擇合適圖表類型
+>
+> **回覆範例：**
+> 偵測到 OEE 數據格式，自動產生 OEE 分解圖。
+> - 圖表已儲存至 `.dotzero/exports/chart-auto-chart-2026-02-08T14-50-00.png`
+
+---
+
 ## MCP Tool Categories
 
 ### Work Order API (98 tools)
@@ -541,6 +629,17 @@ Credentials are stored in `.dotzero/credentials.json` (auto-created on login).
 | OEE (Combined) | 4 | Device, multi-device, line, factory |
 | Status | 1 | Device OEE status |
 | Alarm History | 1 | OEE-related alarms |
+
+### Export API (14 tools)
+
+| Category | Tools | Description |
+|----------|-------|-------------|
+| Generic Charts | 5 | Bar, line, pie, scatter, gauge |
+| DotZero Charts | 4 | OEE breakdown, SPC control chart, device timeline, multi-chart dashboard |
+| Export | 2 | CSV, XLSX file generation |
+| Smart | 2 | Auto-detect JSON → chart, Auto-detect JSON → CSV/XLSX |
+
+> **No authentication required.** Export MCP is a pure rendering engine — it generates charts and files from data you provide. Use it alongside other DotZero tools in a two-step workflow: (1) fetch data with `response_format: "json"`, (2) pass the data to an export tool.
 
 ## Work Order Status Values
 

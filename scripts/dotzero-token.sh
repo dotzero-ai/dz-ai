@@ -87,6 +87,7 @@ do_refresh() {
             .token = $tok |
             .expires_at = $exp
         ' > "$CREDS_FILE"
+        chmod 600 "$CREDS_FILE"
 
         echo -e "${GREEN}Token refreshed successfully!${NC}" >&2
         return 0

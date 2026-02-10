@@ -13,26 +13,33 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Check arguments
-if [ $# -lt 3 ]; then
-    echo -e "${YELLOW}Usage: $0 <email> <password> <tenant_id>${NC}"
+# Check arguments — supports secure interactive mode (2 args) or legacy mode (3 args)
+if [ $# -eq 2 ]; then
+    EMAIL="$1"
+    TENANT_ID="$2"
+    echo -n "Password: "
+    read -s PASSWORD
+    echo ""
+elif [ $# -ge 3 ]; then
+    EMAIL="$1"
+    PASSWORD="$2"
+    TENANT_ID="$3"
+else
+    echo -e "${YELLOW}Usage: $0 <email> <tenant_id>              (password prompted securely)${NC}"
+    echo -e "${YELLOW}       $0 <email> <password> <tenant_id>   (password visible in history)${NC}"
     echo ""
     echo "Arguments:"
     echo "  email      - Your DotZero email address"
-    echo "  password   - Your DotZero password"
     echo "  tenant_id  - Your company tenant ID"
+    echo "  password   - (optional positional) Your DotZero password"
     echo ""
     echo "Example:"
-    echo "  $0 user@example.com password123 my-company"
+    echo "  $0 user@example.com my-company"
     exit 1
 fi
 
-EMAIL="$1"
-PASSWORD="$2"
-TENANT_ID="$3"
-
-# Create .dotzero directory if it doesn't exist
-mkdir -p .dotzero
+# Create .dotzero directory if it doesn't exist (restricted permissions)
+mkdir -p -m 700 .dotzero
 
 # Check for config file, create default if not exists
 if [ ! -f .dotzero/config.json ]; then
@@ -74,6 +81,7 @@ if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
         refresh_token: .refresh_token,
         expires_at: $exp
     }' > .dotzero/credentials.json
+    chmod 600 .dotzero/credentials.json
 
     NAME=$(echo "$RESPONSE" | jq -r '.name // .email')
     echo ""

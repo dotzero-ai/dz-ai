@@ -1,6 +1,6 @@
 {
   "name": "dotzero-skills",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "DotZero cross-platform Skills (REST API only, no MCP required). Works with any AI Agent that supports curl/WebFetch.",
   "author": {
     "name": "DotZero",

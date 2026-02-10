@@ -164,6 +164,23 @@ Calculate and analyze OEE metrics — availability, quality, performance — at 
 
 ---
 
+### Export API (Chart & Data Export)
+
+Generate charts (PNG/JPG) and export data (CSV/XLSX) from DotZero manufacturing data. No authentication required.
+
+- **MCP Server**: `@dotzero.ai/export-mcp`
+- **Skill**: [export-api](../export-api/SKILL.md)
+- **Tools**: 14
+
+| Category | Count | Tools |
+|----------|-------|-------|
+| Generic Charts | 5 | `chart_bar`, `chart_line`, `chart_pie`, `chart_scatter`, `chart_gauge` |
+| DotZero Charts | 4 | `chart_oee_breakdown`, `chart_control`, `chart_timeline`, `chart_multi` |
+| Export | 2 | `export_csv`, `export_xlsx` |
+| Smart | 2 | `chart_from_json`, `export_table_from_json` |
+
+---
+
 ### Gateway MCP (Unified Entry Point)
 
 Single MCP server that dynamically loads tools from all DotZero services on demand.
@@ -192,8 +209,9 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | equipment-mcp | 12 |
 | device-topology-mcp | 37 |
 | oee-mcp | 20 |
+| export-mcp | 14 |
 | dotzero-mcp (gateway) | 6 + dynamic |
-| **Total** | **~217** |
+| **Total** | **~231** |
 
 ---
 

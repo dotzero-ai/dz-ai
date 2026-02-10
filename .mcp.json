@@ -46,6 +46,10 @@
         "OEE_API_URL": "https://dotzerotech-oee-api.dotzero.app",
         "USER_API_URL": "https://user-api.dotzero.app"
       }
+    },
+    "dotzero-export": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/export-mcp"]
     }
   }
 }

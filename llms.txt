@@ -7,9 +7,9 @@
 1. Install: `npx @dotzero.ai/setup`
 2. Restart Claude Code
 3. Authenticate: `auth_login(email, password, tenant_id)`
-4. Use tools: `workorder_list()`, `product_list()`, etc.
+4. Use tools: `workorder_list()`, `oee_device()`, `chart_bar()`, etc.
 
-## Available MCP Tools (98)
+## Available MCP Tools (231)
 
 ### Authentication (2)
 - `auth_login` - Login with email/password/tenant_id
@@ -105,10 +105,58 @@
 | WORK_ORDER_API_URL | Yes | Work Order API base URL |
 | USER_API_URL | No | Auth API URL (has default) |
 
+### SPC (41 tools)
+- Measure Config (9): `spc_measure_config_list`, `spc_measure_config_get`, `spc_measure_config_create`, `spc_measure_config_update`, `spc_measure_config_delete`, `spc_measure_config_attachment_add`, `spc_measure_config_attachment_delete`, `spc_measure_config_modes`, `spc_measure_config_categories`
+- Measure History (11): `spc_measure_history_create`, `spc_measure_history_upsert`, `spc_measure_history_update`, `spc_measure_history_delete`, `spc_measure_history_batch_upsert`, `spc_measure_history_batch_delete`, `spc_measure_history_manufacture`, `spc_measure_history_stock`, `spc_measure_history_count`, `spc_measure_history_filter_list`, `spc_measure_history_filter_list_stock`
+- Config Parent V2 (5): `spc_config_parent_get`, `spc_config_parent_create`, `spc_config_parent_update`, `spc_config_parent_attachment_add`, `spc_config_parent_attachment_delete`
+- History V2 (4): `spc_history_list`, `spc_history_batch_upsert`, `spc_history_batch_by_group`, `spc_history_delete_by_group`
+- Products V2 (2): `spc_product_manufacture_list`, `spc_product_stock_list`
+- Instruments (5): `spc_instrument_list`, `spc_instrument_create`, `spc_instrument_update`, `spc_instrument_delete`, `spc_instrument_batch_delete`
+- Rules (1): `spc_rule_list`
+- Dashboard (6): `spc_dashboard_list`, `spc_dashboard_create`, `spc_dashboard_update`, `spc_dashboard_delete`, `spc_dashboard_manufacture_create`, `spc_dashboard_manufacture_update`
+- Statistics (4): `spc_statistics_nelson`, `spc_statistics_capability`, `spc_statistics_capability_by_point`, `spc_statistics_calculate_result`
+
+### Equipment (12 tools)
+- Alarms (1): `equip_alarm_list`
+- Idle (1): `equip_idle_list`
+- Machine Status (5): `equip_machine_status_history`, `equip_machine_status_part_counts`, `equip_machine_status_part_counts_batch`, `equip_machine_status_realtime`, `equip_machine_status_realtime_batch`
+- Off Time (1): `equip_off_time_list`
+- State Counts (2): `equip_state_counts_factory`, `equip_state_counts_line`
+
+### Device Topology (37 tools)
+- Groups (5): `topo_group_list`, `topo_group_get`, `topo_group_create`, `topo_group_update`, `topo_group_delete`
+- Factories (5): `topo_factory_list`, `topo_factory_get`, `topo_factory_create`, `topo_factory_update`, `topo_factory_delete`
+- Lines (5): `topo_line_list`, `topo_line_get`, `topo_line_create`, `topo_line_update`, `topo_line_delete`
+- Devices (5): `topo_device_list`, `topo_device_get`, `topo_device_create`, `topo_device_update`, `topo_device_delete`
+- Plant Floors (4): `topo_plant_floor_get`, `topo_plant_floor_create`, `topo_plant_floor_update`, `topo_plant_floor_delete`
+- Alarms (5): `topo_alarm_list`, `topo_alarm_get`, `topo_alarm_create`, `topo_alarm_update`, `topo_alarm_delete`
+- Alarm Codes (6): `topo_alarm_code_list`, `topo_alarm_code_get`, `topo_alarm_code_create`, `topo_alarm_code_update`, `topo_alarm_code_delete`, `topo_alarm_code_batch`
+- Topology (2): `topo_topology_count`, `topo_topology_all`
+
+### OEE (20 tools)
+- Availability (4): `oee_availability_device`, `oee_availability_devices`, `oee_availability_line`, `oee_availability_factory`
+- Quality (4): `oee_quality_device`, `oee_quality_devices`, `oee_quality_line`, `oee_quality_factory`
+- Performance (5): `oee_performance_device`, `oee_performance_devices`, `oee_performance_line`, `oee_performance_factory`, `oee_performance_device_range`
+- OEE (4): `oee_device`, `oee_devices`, `oee_line`, `oee_factory`
+- Status (1): `oee_device_status`
+- Alarm History (1): `oee_alarm_history`
+
+### Export (14 tools, no auth required)
+- Charts (5): `chart_bar`, `chart_line`, `chart_pie`, `chart_scatter`, `chart_gauge`
+- DotZero Charts (4): `chart_oee_breakdown`, `chart_control`, `chart_timeline`, `chart_multi`
+- Export (2): `export_csv`, `export_xlsx`
+- Smart (2): `chart_from_json`, `export_table_from_json`
+
 ## npm Packages
 
 - `@dotzero.ai/auth-mcp` - Authentication MCP server
-- `@dotzero.ai/work-order-mcp` - Work Order MCP server
+- `@dotzero.ai/work-order-mcp` - Work Order MCP server (98 tools)
+- `@dotzero.ai/spc-mcp` - SPC MCP server (41 tools)
+- `@dotzero.ai/equipment-mcp` - Equipment monitoring MCP server (12 tools)
+- `@dotzero.ai/device-topology-mcp` - Device topology MCP server (37 tools)
+- `@dotzero.ai/oee-mcp` - OEE MCP server (20 tools)
+- `@dotzero.ai/export-mcp` - Chart & export MCP server (14 tools, no auth)
+- `@dotzero.ai/dotzero-mcp` - Unified gateway MCP (6 tools + dynamic loading)
 - `@dotzero.ai/setup` - One-command setup CLI
 
 ## Source
