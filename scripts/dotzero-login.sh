@@ -1,6 +1,6 @@
 #!/bin/bash
 # DotZero Login Script
-# Usage: ./dotzero-login.sh <email> <password> <tenant_id>
+# Usage: ./dotzero-login.sh <email> <tenant_id>
 #
 # This script authenticates with DotZero and saves the credentials
 # to .dotzero/credentials.json for use by other tools.
@@ -13,30 +13,26 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Check arguments — supports secure interactive mode (2 args) or legacy mode (3 args)
-if [ $# -eq 2 ]; then
-    EMAIL="$1"
-    TENANT_ID="$2"
-    echo -n "Password: "
-    read -s PASSWORD
-    echo ""
-elif [ $# -ge 3 ]; then
-    EMAIL="$1"
-    PASSWORD="$2"
-    TENANT_ID="$3"
-else
-    echo -e "${YELLOW}Usage: $0 <email> <tenant_id>              (password prompted securely)${NC}"
-    echo -e "${YELLOW}       $0 <email> <password> <tenant_id>   (password visible in history)${NC}"
+# Check arguments — password is always prompted interactively
+if [ $# -ne 2 ]; then
+    echo -e "${YELLOW}Usage: $0 <email> <tenant_id>${NC}"
     echo ""
     echo "Arguments:"
     echo "  email      - Your DotZero email address"
     echo "  tenant_id  - Your company tenant ID"
-    echo "  password   - (optional positional) Your DotZero password"
+    echo ""
+    echo "Password will be prompted securely (not visible)."
     echo ""
     echo "Example:"
     echo "  $0 user@example.com my-company"
     exit 1
 fi
+
+EMAIL="$1"
+TENANT_ID="$2"
+echo -n "Password: "
+read -s PASSWORD
+echo ""
 
 # Create .dotzero directory if it doesn't exist (restricted permissions)
 mkdir -p -m 700 .dotzero
@@ -65,7 +61,7 @@ echo "  Tenant ID: ${TENANT_ID}"
 RESPONSE=$(curl -s -X POST \
     "${USER_API_URL}/v2/auth/login?tenantID=${TENANT_ID}" \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
+    -d "$(jq -n --arg e "$EMAIL" --arg p "$PASSWORD" '{email: $e, password: $p}')")
 
 # Check if login was successful
 if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
