@@ -16,9 +16,10 @@ All DotZero services require authentication with a **tenant_id**.
 
 ```
 # Use the auth skill or any service's auth_login tool
+# IMPORTANT: Never hardcode passwords. Ask the user for credentials.
 auth_login(
   email: "user@example.com",
-  password: "password123",
+  password: "<ask-user>",
   tenant_id: "your-tenant-id"  # Required!
 )
 ```

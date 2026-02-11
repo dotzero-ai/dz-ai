@@ -69,16 +69,19 @@ Replace `YOUR-COMPANY` with the actual API hostname.
 # Read config
 USER_API_URL=$(cat .dotzero/config.json | jq -r '.user_api_url')
 
-# Set credentials (replace with actual values)
-EMAIL="user@example.com"
-PASSWORD="password123"
-TENANT_ID="my-company"
+# Prompt for credentials (never hardcode passwords)
+read -p "Email: " EMAIL
+read -s -p "Password: " PASSWORD; echo
+read -p "Tenant ID: " TENANT_ID
 
-# Login
+# Login (password sent via stdin-built JSON, never in shell history)
 RESPONSE=$(curl -s -X POST \
   "${USER_API_URL}/v2/auth/login?tenantID=${TENANT_ID}" \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
+  -d "$(jq -n --arg e "$EMAIL" --arg p "$PASSWORD" '{email:$e,password:$p}')")
+
+# Clear password from memory immediately
+unset PASSWORD
 
 # Check for success and save with expiration time
 if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
@@ -290,7 +293,7 @@ fi
 ```json
 {
   "email": "user@example.com",
-  "password": "password123"
+  "password": "<your-password>"
 }
 ```
 
@@ -329,7 +332,8 @@ If using the dz-ai repository, helper scripts are available:
 
 ```bash
 # Login
-./scripts/dotzero-login.sh user@example.com password123 my-tenant
+./scripts/dotzero-login.sh user@example.com my-tenant
+# Password will be prompted securely (not visible in shell history)
 
 # Get valid token (auto-refresh)
 TOKEN=$(./scripts/dotzero-token.sh get)
