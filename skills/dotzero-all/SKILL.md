@@ -54,7 +54,7 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 
 - **MCP Server**: `@dotzero.ai/work-order-mcp`
 - **Skill**: [work-order-api](../work-order-api/SKILL.md)
-- **Tools**: 100
+- **Tools**: 101
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -63,7 +63,7 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 | Products | 6 | `product_list`, `product_get`, `product_create`, `product_update`, `product_details`, `product_copy` |
 | Workers | 5 | `worker_list`, `worker_get`, `worker_create`, `worker_update`, `worker_delete` |
 | Operation History | 7 | `operation_history_list`, `operation_history_by_workorder`, `operation_history_get`, `operation_history_create`, `operation_history_create_many`, `operation_history_delete`, `operation_history_timeline` |
-| Reports & Analytics | 8 | `workorder_report`, `report_update`, `weekly_report`, `analytics_operations`, `analytics_workorder_report`, `worker_efficiency_ranking`, `device_utilization_ranking`, `production_summary` |
+| Reports & Analytics | 9 | `workorder_report`, `report_update`, `weekly_report`, `analytics_operations`, `analytics_workorder_report`, `worker_efficiency_ranking`, `device_utilization_ranking`, `production_summary`, `workorder_dashboard` |
 | Routes | 7 | `route_list`, `route_get`, `route_create`, `route_update`, `route_delete`, `route_by_product`, `route_copy` |
 | Operations | 5 | `operation_list`, `operation_get`, `operation_create`, `operation_update`, `operation_delete` |
 | Route Operations | 6 | `route_operation_list`, `route_operation_get`, `route_operation_create`, `route_operation_update`, `route_operation_delete`, `route_operation_by_route` |
