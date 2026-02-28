@@ -54,7 +54,7 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 
 - **MCP Server**: `@dotzero.ai/work-order-mcp`
 - **Skill**: [work-order-api](../work-order-api/SKILL.md)
-- **Tools**: 98
+- **Tools**: 100
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -87,7 +87,7 @@ Manage measurement configurations, record inspection data, calculate control cha
 
 - **MCP Server**: `@dotzero.ai/spc-mcp`
 - **Skill**: [spc-api](../spc-api/SKILL.md)
-- **Tools**: 41
+- **Tools**: 49
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -117,7 +117,7 @@ Monitor real-time machine status, alarms, idle time, part counts, and equipment 
 | Authentication | 2 | `auth_login`, `auth_status` |
 | Alarms | 1 | `equip_alarm_list` |
 | Idles | 1 | `equip_idle_list` |
-| Machine Status | 5 | `equip_machine_status_history`, `equip_part_counts`, `equip_part_counts_batch`, `equip_realtime`, `equip_realtime_batch` |
+| Machine Status | 5 | `equip_machine_status_history`, `equip_machine_status_part_counts`, `equip_machine_status_part_counts_batch`, `equip_machine_status_realtime`, `equip_machine_status_realtime_batch` |
 | Off Time | 1 | `equip_off_time_list` |
 | State Counts | 2 | `equip_state_counts_factory`, `equip_state_counts_line` |
 
@@ -129,7 +129,7 @@ Manage factory device topology — groups, factories, lines, devices, plant floo
 
 - **MCP Server**: `@dotzero.ai/device-topology-mcp`
 - **Skill**: [device-topology-api](../device-topology-api/SKILL.md)
-- **Tools**: 37
+- **Tools**: 39
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -151,7 +151,7 @@ Calculate and analyze OEE metrics — availability, quality, performance — at 
 
 - **MCP Server**: `@dotzero.ai/oee-mcp`
 - **Skill**: [oee-api](../oee-api/SKILL.md)
-- **Tools**: 20
+- **Tools**: 21
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -171,7 +171,7 @@ Generate charts (PNG/JPG) and export data (CSV/XLSX) from DotZero manufacturing 
 
 - **MCP Server**: `@dotzero.ai/export-mcp`
 - **Skill**: [export-api](../export-api/SKILL.md)
-- **Tools**: 14
+- **Tools**: 13
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -194,7 +194,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | `auth_login` | Unified login (one JWT works for all services) |
 | `auth_status` | Check auth + show configured services |
 | `auth_refresh` | Refresh expired token |
-| `find_tools` | Search tools by keyword across all ~211 tools |
+| `find_tools` | Search tools by keyword across all ~243 tools |
 | `list_services` | Show available/loaded services |
 | `load_service` | Load a service's tools on demand |
 
@@ -205,14 +205,14 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | MCP Server | Tools |
 |------------|-------|
 | auth-mcp | 3 |
-| work-order-mcp | 98 |
-| spc-mcp | 41 |
+| work-order-mcp | 100 |
+| spc-mcp | 49 |
 | equipment-mcp | 12 |
-| device-topology-mcp | 37 |
-| oee-mcp | 20 |
-| export-mcp | 14 |
+| device-topology-mcp | 39 |
+| oee-mcp | 21 |
+| export-mcp | 13 |
 | dotzero-mcp (gateway) | 6 + dynamic |
-| **Total** | **~231** |
+| **Total** | **~243** |
 
 ---
 
@@ -346,4 +346,4 @@ topo_device_list(line_uuid: "line-uuid")
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai

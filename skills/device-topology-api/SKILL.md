@@ -4,7 +4,7 @@ MCP skill for managing factory device topology — groups, factories, lines, dev
 
 ## Overview
 
-This skill provides 37 tools for interacting with the Device Topology API:
+This skill provides 39 tools for interacting with the Device Topology API:
 
 - **Authentication** (2): Login and check auth status
 - **Groups** (5): CRUD for organizational groups
@@ -405,9 +405,9 @@ topo_device_create(name: "CNC-002", line_uuid: "line-uuid")
 ## MCP Server
 
 - **Package**: `@dotzero.ai/device-topology-mcp`
-- **Tools**: 37 (8 basic + 29 advanced, unlocked after auth)
+- **Tools**: 39 (8 basic + 31 advanced, unlocked after auth)
 - **Note**: This API uses PUT (not PATCH) for update operations
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai

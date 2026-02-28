@@ -4,7 +4,7 @@ MCP skill for Statistical Process Control (SPC) — manage measurement configura
 
 ## Overview
 
-This skill provides 41 tools for interacting with the SPC API:
+This skill provides 49 tools for interacting with the SPC API:
 
 - **Authentication** (2): Login and check auth status
 - **Products V2** (2): List manufacture and stock products
@@ -477,8 +477,8 @@ spc_statistics_nelson(spc_measure_point_config_uuid: "config-uuid")
 ## MCP Server
 
 - **Package**: `@dotzero.ai/spc-mcp`
-- **Tools**: 41 (6 basic + 35 advanced, unlocked after auth)
+- **Tools**: 49 (6 basic + 43 advanced, unlocked after auth)
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai

@@ -4,7 +4,7 @@ MCP skill for Overall Equipment Effectiveness (OEE) — availability, quality, p
 
 ## Overview
 
-This skill provides 20 tools for interacting with the OEE API:
+This skill provides 21 tools for interacting with the OEE API:
 
 - **Authentication** (2): Login and check auth status
 - **Availability** (4): Device, multi-device, line, and factory availability
@@ -12,6 +12,7 @@ This skill provides 20 tools for interacting with the OEE API:
 - **Performance** (5): Device, multi-device, line, factory performance, and device range analysis
 - **OEE** (4): Combined OEE at device, multi-device, line, and factory levels
 - **Status** (1): Current device OEE status
+- **Alarm History** (1): OEE-related alarm history
 - **Alarm History** (1): OEE-related alarm history
 
 ## Prerequisites
@@ -295,8 +296,8 @@ oee_performance_device_range(device_uuid: "device-uuid", start_time: "2026-02-01
 ## MCP Server
 
 - **Package**: `@dotzero.ai/oee-mcp`
-- **Tools**: 20 (6 basic + 14 advanced, unlocked after auth)
+- **Tools**: 21 (6 basic + 15 advanced, unlocked after auth)
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai

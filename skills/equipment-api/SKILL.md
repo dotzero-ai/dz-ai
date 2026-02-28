@@ -203,4 +203,4 @@ equip_part_counts(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z"
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai
