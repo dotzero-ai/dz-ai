@@ -19,16 +19,14 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 
 ## Setup
 
-Ensure config has the Work Order API URL:
+Config is created automatically by `dotzero-auth`. If `work_order_api_url` is missing, add it:
 
 ```bash
-cat .dotzero/config.json
-# Should contain:
-# {
-#   "user_api_url": "https://dotzerotech-user-api.dotzero.app",
-#   "work_order_api_url": "https://YOUR-COMPANY.dotzero.app"
-# }
+CONFIG=".dotzero/config.json"
+jq '. + {"work_order_api_url": "https://work-order-api.dotzero.app"}' "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
 ```
+
+> Do **not** ask the user for the API URL — use the default above.
 
 ## 名詞對照 (Terminology)
 

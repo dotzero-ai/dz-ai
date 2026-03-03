@@ -29,25 +29,6 @@ This skill provides 100 tools for interacting with the Work Order API:
 
 ## Prerequisites
 
-### API URL Setup
-
-Before first use, add the Work Order API URL to `.dotzero/config.json`:
-
-```bash
-mkdir -p .dotzero
-
-# If config.json already exists (from dotzero-auth setup), add the URL:
-CONFIG=".dotzero/config.json"
-if [ -f "$CONFIG" ]; then
-  TMP=$(jq --arg url "https://YOUR-COMPANY.dotzero.app" '. + {work_order_api_url: $url}' "$CONFIG")
-  echo "$TMP" > "$CONFIG"
-else
-  echo '{"user_api_url":"https://dotzerotech-user-api.dotzero.app","work_order_api_url":"https://YOUR-COMPANY.dotzero.app"}' > "$CONFIG"
-fi
-```
-
-Replace `YOUR-COMPANY` with your company's actual API hostname (ask the user if not known).
-
 ### Authentication Required
 
 Before using most tools, you need to authenticate. The `tenant_id` is required for authentication.
@@ -75,11 +56,11 @@ Set the `WORK_ORDER_API_TOKEN` environment variable with a valid JWT token.
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `WORK_ORDER_API_URL` | Yes | Base URL of the Work Order API |
-| `WORK_ORDER_API_TOKEN` | No | JWT token (or use auth_login) |
-| `USER_API_URL` | No | Auth API URL (default: https://dotzerotech-user-api.dotzero.app) |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `WORK_ORDER_API_URL` | No | `https://work-order-api.dotzero.app` | Work Order API base URL |
+| `WORK_ORDER_API_TOKEN` | No | — | JWT token (or use auth_login) |
+| `USER_API_URL` | No | `https://dotzerotech-user-api.dotzero.app` | Auth API URL |
 
 ## Work Order Status Values
 
