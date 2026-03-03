@@ -24,7 +24,12 @@ workorder_list(status: 2, limit: 20)
 
 ## Prerequisites (curl fallback only)
 
-1. Complete `dotzero-auth` authentication first
+1. **Authentication required first** — call `auth_login` MCP tool:
+   ```
+   auth_login(tenant_id: "your-tenant-id")
+   ```
+   This opens a browser login form. Token is saved automatically.
+   If `auth_login` is not available, run: `claude mcp add dotzero-auth --command npx --args "-y @dotzero.ai/auth-mcp"`
 2. `.dotzero/credentials.json` must exist with valid token
 
 ## 名詞對照 (Terminology)

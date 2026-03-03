@@ -63,54 +63,51 @@ EOF
 
 ## Login
 
-**Required information** (ask user if not known):
-- `tenant_id`: Company tenant ID
+**Step 1 — Ask user for Tenant ID** (only this, never ask for email or password):
 
-> **DO NOT ask for email or password upfront.**
->
-> **If the `auth_login` MCP tool is available** (dotzero-auth MCP server is running), call it with `tenant_id` only — it opens a secure browser login form automatically:
-> ```
-> auth_login(tenant_id: "my-company")
-> ```
-> The browser handles email + password entry. Password never passes through the AI.
->
-> **Only use the curl-based flow below if the MCP tool is NOT available.**
+```
+AI: "請問你的 Tenant ID 是什麼？"
+```
 
-### Login Command (Fallback — curl only, use when MCP is unavailable)
+**Step 2 — Call `auth_login` MCP tool** (opens browser login automatically):
 
-Credentials are prompted directly in the terminal via `read` — **do NOT ask the user to type email/password in the chat**. Just run the script and the terminal will prompt them securely.
+```
+auth_login(tenant_id: "your-tenant-id")
+```
+
+> Browser opens at `http://127.0.0.1:<port>/` — user enters email + password in the browser form.
+> Password **never** passes through the AI. Token is returned automatically on success.
+
+### If `auth_login` MCP tool is not available
+
+The DotZero MCP server is not running. Add it to Claude Code:
 
 ```bash
-# Read config
-USER_API_URL=$(cat .dotzero/config.json | jq -r '.user_api_url')
+claude mcp add dotzero-auth --command npx --args "-y @dotzero.ai/auth-mcp"
+```
 
-# Prompt for credentials directly in terminal (not through AI chat)
-read -p "Email: " EMAIL
-read -s -p "Password: " PASSWORD; echo
-read -p "Tenant ID: " TENANT_ID
+Then restart Claude Code and call `auth_login(tenant_id: "your-tenant-id")` again.
 
-# Login (password sent via stdin-built JSON, never in shell history)
+### Fallback — curl (only if MCP cannot be set up)
+
+Ask the user for their email **in chat**, then run (password will be asked in terminal):
+
+```bash
+TENANT_ID="<from user>"
+EMAIL="<from user — ask in chat>"
+USER_API_URL=$(cat .dotzero/config.json | jq -r '.user_api_url // "https://dotzerotech-user-api.dotzero.app"')
+
+# Ask user to paste password here (or run in their own terminal for security)
 RESPONSE=$(curl -s -X POST \
   "${USER_API_URL}/v2/auth/login?tenantID=${TENANT_ID}" \
   -H "Content-Type: application/json" \
-  -d "$(jq -n --arg e "$EMAIL" --arg p "$PASSWORD" '{email:$e,password:$p}')")
+  -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
 
-# Clear password from memory immediately
-unset PASSWORD
-
-# Check for success and save with expiration time
 if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
-  # Calculate expiration (1 hour from now)
   EXPIRES_AT=$(date -u -v+1H "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -d "+1 hour" "+%Y-%m-%dT%H:%M:%SZ")
-
-  # Save credentials
   echo "$RESPONSE" | jq --arg tenant "$TENANT_ID" --arg exp "$EXPIRES_AT" '{
-    tenant_id: $tenant,
-    email: .email,
-    name: .name,
-    token: .token,
-    refresh_token: .refresh_token,
-    expires_at: $exp
+    tenant_id: $tenant, email: .email, name: .name,
+    token: .token, refresh_token: .refresh_token, expires_at: $exp
   }' > .dotzero/credentials.json
   echo "Login successful! Token expires at: $EXPIRES_AT"
 else
