@@ -59,17 +59,27 @@ EOF
 ## Login
 
 **Required information** (ask user if not known):
-- `email`: User's email address
-- `password`: User's password
 - `tenant_id`: Company tenant ID
 
-### Login Command
+> **DO NOT ask for email or password upfront.**
+>
+> **If the `auth_login` MCP tool is available** (dotzero-auth MCP server is running), call it with `tenant_id` only — it opens a secure browser login form automatically:
+> ```
+> auth_login(tenant_id: "my-company")
+> ```
+> The browser handles email + password entry. Password never passes through the AI.
+>
+> **Only use the curl-based flow below if the MCP tool is NOT available.**
+
+### Login Command (Fallback — curl only, use when MCP is unavailable)
+
+Credentials are prompted directly in the terminal via `read` — **do NOT ask the user to type email/password in the chat**. Just run the script and the terminal will prompt them securely.
 
 ```bash
 # Read config
 USER_API_URL=$(cat .dotzero/config.json | jq -r '.user_api_url')
 
-# Prompt for credentials (never hardcode passwords)
+# Prompt for credentials directly in terminal (not through AI chat)
 read -p "Email: " EMAIL
 read -s -p "Password: " PASSWORD; echo
 read -p "Tenant ID: " TENANT_ID
