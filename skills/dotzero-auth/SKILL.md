@@ -42,19 +42,19 @@ Credentials are stored in the project's `.dotzero/` directory:
 
 ## Initial Setup
 
-Before first use, create the config file:
+Before first use, create the config file (only needed once):
 
 ```bash
 mkdir -p .dotzero
 cat > .dotzero/config.json << 'EOF'
 {
-  "user_api_url": "https://dotzerotech-user-api.dotzero.app",
-  "work_order_api_url": "https://YOUR-COMPANY.dotzero.app"
+  "user_api_url": "https://dotzerotech-user-api.dotzero.app"
 }
 EOF
 ```
 
-Replace `YOUR-COMPANY` with the actual API hostname.
+> The `user_api_url` above is the standard DotZero authentication endpoint — no changes needed.
+> Service-specific URLs (e.g. work order API) will be set up when you first use those skills.
 
 ## Login
 
