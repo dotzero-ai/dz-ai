@@ -2,14 +2,20 @@
 
 MCP servers and Claude Code skills for [DotZero](https://dotzero.app) manufacturing execution systems (MES).
 
-## Quick Install
+## Quick Install (Claude Code)
 
-```bash
-npx @dotzero.ai/setup
+```
+/plugin marketplace add dotzero-ai/dz-ai
+/plugin install dotzero@dz-ai
 ```
 
-This registers all MCP servers, creates `.dotzero/config.json`, and updates `.gitignore`.
-After setup, restart Claude Code and run `auth_login` to authenticate.
+Restart Claude Code after install, then run `auth_login` to authenticate.
+
+To update later:
+
+```
+/plugin update dotzero@dz-ai
+```
 
 ## What's Included
 
@@ -41,15 +47,32 @@ Works with any AI Agent that supports curl/WebFetch, no MCP required:
 
 ## Installation Options
 
-### Option 1: Full Plugin (MCP + Skills)
+### Option 1: Claude Code Plugin (Recommended)
 
-Install the complete plugin with MCP servers and skills:
+Install via Claude Code's built-in plugin system. Supports one-command updates.
+
+```
+/plugin marketplace add dotzero-ai/dz-ai
+/plugin install dotzero@dz-ai          # Full plugin (MCP Servers + Skills)
+/plugin install dotzero-skills@dz-ai   # Skills only (REST API, no Node.js required)
+```
+
+To update:
+```
+/plugin update dotzero@dz-ai
+```
+
+### Option 2: npx Setup (MCP Only)
+
+Registers MCP servers directly without the plugin system:
 
 ```bash
 npx @dotzero.ai/setup
 ```
 
-### Option 2: Manual MCP Setup
+Creates `.dotzero/config.json` and updates `.gitignore`. Restart Claude Code after running.
+
+### Option 3: Manual MCP Setup
 
 ```bash
 # Auth
@@ -99,7 +122,7 @@ claude mcp add dotzero-export \
   --args "-y" "@dotzero.ai/export-mcp"
 ```
 
-### Option 3: Skills Only (No MCP)
+### Option 4: Skills Only (No MCP)
 
 For AI Agents that don't support MCP, use the REST API skills in `skills-only/`.
 
