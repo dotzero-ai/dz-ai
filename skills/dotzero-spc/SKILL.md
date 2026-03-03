@@ -37,7 +37,7 @@ cat .dotzero/config.json
 ```bash
 # Load configuration
 CONFIG=$(cat .dotzero/config.json)
-API_URL=$(echo "$CONFIG" | jq -r '.spc_api_url')
+API_URL=$(echo "$CONFIG" | jq -r '.spc_api_url // "https://dotzerotech-spc-backend.dotzero.app"')
 TOKEN=$(get_valid_token)
 ```
 

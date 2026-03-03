@@ -11,22 +11,21 @@ metadata:
 
 Manage work orders, products, workers, routes, operations, devices, quality, warehouse, and WMS in DotZero manufacturing systems (MES).
 
-## Prerequisites
+## IMPORTANT: Prefer MCP Tools
+
+**If MCP tools are available** (e.g. `workorder_list`, `workorder_get`, `workorder_create`), use them directly — do NOT use curl. MCP tools handle auth and API calls automatically.
+
+```
+# Use MCP tool directly:
+workorder_list(status: 2, limit: 20)
+```
+
+**Only use the curl-based approach below if MCP tools are NOT available.**
+
+## Prerequisites (curl fallback only)
 
 1. Complete `dotzero-auth` authentication first
 2. `.dotzero/credentials.json` must exist with valid token
-3. `.dotzero/config.json` must have `work_order_api_url` set
-
-## Setup
-
-Config is created automatically by `dotzero-auth`. If `work_order_api_url` is missing, add it:
-
-```bash
-CONFIG=".dotzero/config.json"
-jq '. + {"work_order_api_url": "https://work-order-api.dotzero.app"}' "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
-```
-
-> Do **not** ask the user for the API URL — use the default above.
 
 ## 名詞對照 (Terminology)
 
@@ -105,7 +104,8 @@ Before any API call, get a valid token:
 ```bash
 # Load configuration
 CONFIG=$(cat .dotzero/config.json)
-API_URL=$(echo "$CONFIG" | jq -r '.work_order_api_url')
+API_URL=$(echo "$CONFIG" | jq -r '.work_order_api_url // "https://work-order-api.dotzero.app"')
+# Default: https://work-order-api.dotzero.app (do not ask user for this)
 
 # Get valid token (auto-refresh if expired)
 TOKEN=$(get_valid_token)

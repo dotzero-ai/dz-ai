@@ -32,7 +32,7 @@ cat .dotzero/config.json
 
 ```bash
 CONFIG=$(cat .dotzero/config.json)
-API_URL=$(echo "$CONFIG" | jq -r '.device_topology_api_url')
+API_URL=$(echo "$CONFIG" | jq -r '.device_topology_api_url // "https://dotzerotech-device-topology.dotzero.app"')
 TOKEN=$(get_valid_token)
 ```
 
