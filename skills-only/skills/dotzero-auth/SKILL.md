@@ -48,13 +48,18 @@ Before first use, create the config file (only needed once):
 mkdir -p .dotzero
 cat > .dotzero/config.json << 'EOF'
 {
-  "user_api_url": "https://dotzerotech-user-api.dotzero.app"
+  "user_api_url": "https://dotzerotech-user-api.dotzero.app",
+  "work_order_api_url": "https://work-order-api.dotzero.app",
+  "spc_api_url": "https://dotzerotech-spc-backend.dotzero.app",
+  "equipment_api_url": "https://dotzerotech-equipment-api.dotzero.app",
+  "device_topology_api_url": "https://dotzerotech-device-topology.dotzero.app",
+  "oee_api_url": "https://dotzerotech-oee-api.dotzero.app"
 }
 EOF
 ```
 
-> The `user_api_url` above is the standard DotZero authentication endpoint — no changes needed.
-> Service-specific URLs (e.g. work order API) will be set up when you first use those skills.
+> All URLs above are standard DotZero endpoints — no changes needed.
+> Add `.dotzero/` to `.gitignore` to avoid committing credentials.
 
 ## Login
 
