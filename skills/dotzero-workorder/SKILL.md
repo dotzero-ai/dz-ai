@@ -384,7 +384,39 @@ curl -s "${API_URL}/v1/workOrderOpHistory/${WORK_ORDER_UUID}/byWorkOrderUuid" \
 
 ## Reports
 
-### Work Order Report
+### 生產分析工具選擇指南 (MCP Tool Selection for Analytics)
+
+**IMPORTANT**: 依查詢意圖選擇正確工具。錯誤的工具會返回不準確的時間範圍資料。
+
+| 查詢意圖 | 正確工具 | 說明 |
+|----------|---------|------|
+| 最近一週做最多的物料是什麼 | `material_production_ranking` | 按物料名稱/料號排名產量 |
+| 哪個料號良品數最多 | `material_production_ranking` | 依 `good` 降序排列 |
+| 最有效率的作業員 | `worker_efficiency_ranking` | 依 good/hr 排名 |
+| 哪台機台最忙 | `device_utilization_ranking` | 依稼動率排名 |
+| 本週生產總結 | `production_summary` | 整體數量/不良率 |
+| 完整週報（生產+人員+設備） | `workorder_dashboard` | 一次涵蓋所有面向 |
+
+**時間過濾說明**:
+- `material_production_ranking` 使用 `/v1/workOrderOpHistory/` 的 `action=dateRange`，過濾**實際作業時間**與指定範圍重疊的紀錄（包含「進行中→完工」的工單）
+- **不要**用 `workorder_report` 或 `operation_history_list` 做物料產量聚合 — 前者時間過濾不可靠，後者資料量太大
+
+### Material Production Ranking (MCP Only)
+
+```
+# MCP tool (preferred):
+material_production_ranking(
+  start_time_start: "2026-02-25T00:00:00+08:00",
+  start_time_end: "2026-03-04T23:59:59+08:00",
+  top_n: 10
+)
+```
+
+> No curl equivalent — this tool paginates and aggregates server-side via /v1/workOrderOpHistory/.
+
+### Work Order Report (curl fallback — raw records only)
+
+> **WARNING**: `/v1/workOrderReport/` time filter (`startTimeStart/End`) filters by **scheduled start time of the work order**, not actual operation time. Results may include records outside the intended period. Use `material_production_ranking` MCP tool for accurate material production queries.
 
 ```bash
 curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-01T00:00:00Z&startTimeEnd=2024-01-31T23:59:59Z&limit=50" \
@@ -392,10 +424,20 @@ curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-01T00:00:00Z&star
 ```
 
 **Query Parameters**:
-- `startTimeStart` / `startTimeEnd` (ISO 8601, must pair): Report period
+- `startTimeStart` / `startTimeEnd` (ISO 8601, must pair): Work order scheduled start time range (not operation time)
 - `workOrderID` (string): Filter by work order
 - `deviceUUID` (string): Filter by device
 - `limit`, `start`: Pagination
+
+### Operation History with Date Range (actual operation time filter)
+
+```bash
+# Fetch operations that overlapped with the specified time range (includes in-progress → completed)
+curl -s "${API_URL}/v1/workOrderOpHistory/?action=dateRange&startTime=2026-02-25T00:00:00%2B08:00&endTime=2026-03-04T23:59:59%2B08:00&limit=100" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+This is the correct endpoint for "production during this week" — uses actual operation time overlap.
 
 ---
 
@@ -548,6 +590,7 @@ curl -s "${API_URL}/v1/workOrders" \
 | Worker efficiency ranking | MCP | `worker_efficiency_ranking` (MCP aggregation tool, no direct curl) |
 | Device utilization ranking | MCP | `device_utilization_ranking` (MCP aggregation tool, no direct curl) |
 | Production summary | MCP | `production_summary` (MCP aggregation tool, no direct curl) |
+| Material production ranking | MCP | `material_production_ranking` (MCP, uses dateRange filter for accurate time scope) |
 
 ### Devices & Stations
 
