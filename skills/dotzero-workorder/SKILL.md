@@ -388,17 +388,27 @@ curl -s "${API_URL}/v1/workOrderOpHistory/${WORK_ORDER_UUID}/byWorkOrderUuid" \
 
 **IMPORTANT**: 依查詢意圖選擇正確工具。錯誤的工具會返回不準確的時間範圍資料。
 
-| 查詢意圖 | 正確工具 | 說明 |
-|----------|---------|------|
-| 最近一週做最多的物料是什麼 | `material_production_ranking` | 按物料名稱/料號排名產量 |
-| 哪個料號良品數最多 | `material_production_ranking` | 依 `good` 降序排列 |
-| 最有效率的作業員 | `worker_efficiency_ranking` | 依 good/hr 排名 |
-| 哪台機台最忙 | `device_utilization_ranking` | 依稼動率排名 |
-| 本週生產總結 | `production_summary` | 整體數量/不良率 |
-| 完整週報（生產+人員+設備） | `workorder_dashboard` | 一次涵蓋所有面向 |
+#### 問法 → 工具對應
+
+| 問法模式 | 關鍵概念 | 正確工具 | 時間參數的意義 |
+|---------|---------|---------|--------------|
+| 最近一週「做了」多少/什麼物料 | 實際產出 | `material_production_ranking` | 實際作業時間 |
+| 本月「產量」最高的料號 | 實際產出聚合 | `material_production_ranking` | 實際作業時間 |
+| 今天/本週「有哪些工單」在生產 | 工單排程狀態 | `workorder_list` | 工單計劃開工時間 |
+| 工單「什麼時候開工/完工」 | 工單計劃時間 | `workorder_list` / `workorder_get` | 計劃開工/完工時間 |
+| 某工單的「生產記錄」/工序 | 子工單明細 | `operation_history_by_workorder` | 不需要時間，直接用 uuid |
+| 「整體」這週做了多少（良品/不良率）| 產出統計 | `production_summary` | 實際作業時間 |
+| 「哪個作業員」最有效率 | 人員效率 | `worker_efficiency_ranking` | 實際作業時間 |
+| 「哪台機台」使用率最高 | 設備稼動 | `device_utilization_ranking` | 實際作業時間 |
+| 完整週報（生產+人員+設備） | 全面報告 | `workorder_dashboard` | 實際作業時間 |
+
+**時間概念辨別（核心知識）：**
+- 「做了」「產出」「生產了多少」「哪個物料最多」→ **實際作業時間** → 用 `material_production_ranking` / `production_summary`
+- 「工單」「排程」「計劃」「今天/本週的工單」→ **工單計劃時間** → 用 `workorder_list` 的 `start_time_start/end`
 
 **時間過濾說明**:
 - `material_production_ranking` 使用 `/v1/workOrderOpHistory/` 的 `action=dateRange`，過濾**實際作業時間**與指定範圍重疊的紀錄（包含「進行中→完工」的工單）
+- `workorder_list` / `workorder_report` 的 `start_time_start/end` 篩選的是工單**計劃開工時間**，非實際作業時間
 - **不要**用 `workorder_report` 或 `operation_history_list` 做物料產量聚合 — 前者時間過濾不可靠，後者資料量太大
 
 ### Material Production Ranking (MCP Only)
