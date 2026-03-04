@@ -27,6 +27,5 @@
     "cross-platform"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
-  "hooks": "./hooks/hooks.json"
+  "mcpServers": "./.mcp.json"
 }
