@@ -19,7 +19,7 @@ Centralized authentication for DotZero services. Works with any AI Agent that ca
 
 ## Token Storage
 
-Credentials are stored in the project's `.dotzero/` directory:
+Credentials are stored in `.dotzero/` directory (project-level if exists, otherwise `~/.dotzero/`):
 
 | File | Purpose |
 |------|---------|
@@ -45,8 +45,9 @@ Credentials are stored in the project's `.dotzero/` directory:
 Before first use, create the config file (only needed once):
 
 ```bash
-mkdir -p .dotzero
-cat > .dotzero/config.json << 'EOF'
+# 建立 .dotzero 設定目錄（預設用家目錄，專案隔離用 .dotzero/）
+mkdir -p ~/.dotzero
+cat > ~/.dotzero/config.json << 'EOF'
 {
   "user_api_url": "https://dotzerotech-user-api.dotzero.app",
   "work_order_api_url": "https://work-order-api.dotzero.app",
@@ -59,6 +60,7 @@ EOF
 ```
 
 > All URLs above are standard DotZero endpoints — no changes needed.
+> For project-level isolation, create `.dotzero/` in the project directory instead.
 > Add `.dotzero/` to `.gitignore` to avoid committing credentials.
 
 ## Login
@@ -95,7 +97,8 @@ Ask the user for their email **in chat**, then run (password will be asked in te
 ```bash
 TENANT_ID="<from user>"
 EMAIL="<from user — ask in chat>"
-USER_API_URL=$(cat .dotzero/config.json | jq -r '.user_api_url // "https://dotzerotech-user-api.dotzero.app"')
+_DZ_DIR=$([ -d ".dotzero" ] && echo ".dotzero" || echo "${HOME}/.dotzero")
+USER_API_URL=$(cat "${_DZ_DIR}/config.json" 2>/dev/null | jq -r '.user_api_url // "https://dotzerotech-user-api.dotzero.app"')
 
 # Ask user to paste password here (or run in their own terminal for security)
 RESPONSE=$(curl -s -X POST \
@@ -105,10 +108,11 @@ RESPONSE=$(curl -s -X POST \
 
 if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
   EXPIRES_AT=$(date -u -v+1H "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -d "+1 hour" "+%Y-%m-%dT%H:%M:%SZ")
+  mkdir -p "$_DZ_DIR"
   echo "$RESPONSE" | jq --arg tenant "$TENANT_ID" --arg exp "$EXPIRES_AT" '{
     tenant_id: $tenant, email: .email, name: .name,
     token: .token, refresh_token: .refresh_token, expires_at: $exp
-  }' > .dotzero/credentials.json
+  }' > "${_DZ_DIR}/credentials.json"
   echo "Login successful! Token expires at: $EXPIRES_AT"
 else
   echo "Login failed: $RESPONSE"
@@ -122,8 +126,16 @@ fi
 ```bash
 # Function to get valid token (auto-refresh if expired)
 get_valid_token() {
-  CREDS_FILE=".dotzero/credentials.json"
-  CONFIG_FILE=".dotzero/config.json"
+  # Find .dotzero directory: project-level first, then user home
+  if [ -d ".dotzero" ]; then
+    _DOTZERO_DIR=".dotzero"
+  elif [ -d "${HOME}/.dotzero" ]; then
+    _DOTZERO_DIR="${HOME}/.dotzero"
+  else
+    _DOTZERO_DIR="${HOME}/.dotzero"
+  fi
+  CREDS_FILE="${_DOTZERO_DIR}/credentials.json"
+  CONFIG_FILE="${_DOTZERO_DIR}/config.json"
 
   if [ ! -f "$CREDS_FILE" ]; then
     echo "ERROR: Not logged in" >&2
@@ -194,14 +206,16 @@ TOKEN=$(get_valid_token)
 If you just want to read the current token:
 
 ```bash
-TOKEN=$(cat .dotzero/credentials.json | jq -r '.token')
+_DZ_DIR=$([ -d ".dotzero" ] && echo ".dotzero" || echo "${HOME}/.dotzero")
+TOKEN=$(cat "${_DZ_DIR}/credentials.json" | jq -r '.token')
 ```
 
 ## Check Token Status
 
 ```bash
-if [ -f .dotzero/credentials.json ]; then
-  CREDS=$(cat .dotzero/credentials.json)
+_DZ_DIR=$([ -d ".dotzero" ] && echo ".dotzero" || echo "${HOME}/.dotzero")
+if [ -f "${_DZ_DIR}/credentials.json" ]; then
+  CREDS=$(cat "${_DZ_DIR}/credentials.json")
   echo "Email: $(echo "$CREDS" | jq -r '.email')"
   echo "Tenant: $(echo "$CREDS" | jq -r '.tenant_id')"
   echo "Expires: $(echo "$CREDS" | jq -r '.expires_at')"
@@ -225,10 +239,11 @@ fi
 ## Manual Token Refresh
 
 ```bash
-CREDS=$(cat .dotzero/credentials.json)
+_DZ_DIR=$([ -d ".dotzero" ] && echo ".dotzero" || echo "${HOME}/.dotzero")
+CREDS=$(cat "${_DZ_DIR}/credentials.json")
 REFRESH_TOKEN=$(echo "$CREDS" | jq -r '.refresh_token')
 TENANT_ID=$(echo "$CREDS" | jq -r '.tenant_id')
-USER_API_URL=$(cat .dotzero/config.json | jq -r '.user_api_url')
+USER_API_URL=$(cat "${_DZ_DIR}/config.json" | jq -r '.user_api_url')
 
 RESPONSE=$(curl -s -X POST \
   "${USER_API_URL}/v2/auth/token?tenantID=${TENANT_ID}" \
@@ -249,7 +264,7 @@ if [ -n "$NEW_TOKEN" ]; then
   echo "$CREDS" | jq --arg tok "$NEW_TOKEN" --arg exp "$NEW_EXPIRES" '
     .token = $tok |
     .expires_at = $exp
-  ' > .dotzero/credentials.json
+  ' > "${_DZ_DIR}/credentials.json"
   echo "Token refreshed! New expiration: $NEW_EXPIRES"
 else
   echo "Refresh failed: $RESPONSE"

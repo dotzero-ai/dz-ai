@@ -46,8 +46,16 @@ workorder_list(status: 2, limit: 20)
 ```bash
 # Function to get valid token (auto-refresh if expired)
 get_valid_token() {
-  CREDS_FILE=".dotzero/credentials.json"
-  CONFIG_FILE=".dotzero/config.json"
+  # Find .dotzero directory: project-level first, then user home
+  if [ -d ".dotzero" ]; then
+    _DOTZERO_DIR=".dotzero"
+  elif [ -d "${HOME}/.dotzero" ]; then
+    _DOTZERO_DIR="${HOME}/.dotzero"
+  else
+    _DOTZERO_DIR="${HOME}/.dotzero"
+  fi
+  CREDS_FILE="${_DOTZERO_DIR}/credentials.json"
+  CONFIG_FILE="${_DOTZERO_DIR}/config.json"
 
   if [ ! -f "$CREDS_FILE" ]; then
     echo "ERROR: Not logged in" >&2
