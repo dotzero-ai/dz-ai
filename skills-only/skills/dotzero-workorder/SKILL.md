@@ -22,6 +22,19 @@ workorder_list(status: 2, limit: 20)
 
 **Only use the curl-based approach below if MCP tools are NOT available.**
 
+## 查詢路由指引（避免大型回應）
+
+| 用戶問題類型 | 正確工具 | 不要用 |
+|-------------|---------|---------|
+| 本週/本月工單狀況、儀表板 | `workorder_dashboard(start_time_start, start_time_end)` | ~~workorder_list~~ |
+| 各狀態工單統計 | `analytics_workorder_report` | ~~workorder_list~~ |
+| 工單週報 | `weekly_report` | — |
+| 純計數（有幾張） | `workorder_count(status?)` | ~~workorder_list~~ |
+| 查看特定工單清單 | `workorder_list(limit≤10, fields=[...], format=markdown)` | ~~format=json, limit>10~~ |
+| 單筆工單詳細 | `workorder_get(uuid)` | — |
+
+**黃金法則**：JSON format 只用於 limit ≤ 10 的少量精確查詢。彙總問題用專屬彙總工具。
+
 ## Prerequisites (curl fallback only)
 
 1. **Authentication required first** — call `auth_login` MCP tool:
