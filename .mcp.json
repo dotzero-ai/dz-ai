@@ -50,6 +50,38 @@
     "dotzero-export": {
       "command": "npx",
       "args": ["-y", "@dotzero.ai/export-mcp"]
+    },
+    "dotzero-scm": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/scm-mcp"],
+      "env": {
+        "SCM_API_URL": "https://dotzerotech-scm-backend.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    },
+    "dotzero-gdt": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/gdt-mcp"],
+      "env": {
+        "GDT_API_URL": "https://gdt-backend.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    },
+    "dotzero-sd": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/sd-mcp"],
+      "env": {
+        "SD_API_URL": "https://sales-distribution-api.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
+    },
+    "dotzero-wms": {
+      "command": "npx",
+      "args": ["-y", "@dotzero.ai/wms-mcp"],
+      "env": {
+        "WMS_API_URL": "https://dotzerotech-wms-backend.dotzero.app",
+        "USER_API_URL": "https://user-api.dotzero.app"
+      }
     }
   }
 }
