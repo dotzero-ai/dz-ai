@@ -68,6 +68,8 @@ Check the authentication configuration status.
 
 **Returns:** Current User API URL and available tools
 
+> Note: `auth_status` only reports **local** state (in-memory token present, configured URLs) — it does not contact the backend. To actually verify a token against the server, call `GET {USER_API_URL}/v2/auth/userInfo` with `Authorization: Bearer {token}`; 200 returns `{email, name, tenantId}`, 401 means the token is invalid/expired.
+
 ## Authentication Flow
 
 ```
@@ -147,12 +149,14 @@ claude mcp add dotzero-auth \
 
 ## Error Handling
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "Invalid email or password" | Wrong credentials | Verify email and password |
-| "Tenant not found" | Invalid tenant_id | Ask user for correct tenant_id |
-| "Bad request" | Missing parameters | Ensure all required fields are provided |
-| "Too many login attempts" | Rate limited | Wait before retrying |
+Backend errors come as JSON `{"errorType": "...", "errorMsg": "..."}`; login failures return **HTTP 500** (not 400/401) — match on `errorType`, not on HTTP status or message text.
+
+| HTTP | errorType | Cause | Solution |
+|------|-----------|-------|----------|
+| 500 | `INVALID_AUTH_INFO` | Wrong credentials (`Please check tenantId, email and password.`) | Verify email and password |
+| 401 | `INVALID_AUTH_INFO` | Invalid tenant_id (`No such tenant.`) | Ask user for correct tenant_id |
+| 500 | `INVALID_DATA` | Missing parameters (`Email / Password is not given.`) | Ensure all required fields are provided |
+| 500 | `TOO_MANY_ATTEMPTS_TRY_LATER` | Rate limited | Wait before retrying |
 
 ## Repository
 

@@ -28,7 +28,7 @@ workorder_list(status: 2, limit: 20)
 |-------------|---------|---------|
 | 本週/本月工單狀況、儀表板 | `workorder_dashboard(start_time_start, start_time_end)` | ~~workorder_list~~ |
 | 各狀態工單統計 | `analytics_workorder_report` | ~~workorder_list~~ |
-| 工單週報 | `weekly_report` | — |
+| 工單週報 | `workorder_dashboard(start_time_start, start_time_end)` | ~~weekly_report（後端已停用）~~ |
 | 純計數（有幾張） | `workorder_count(status?)` | ~~workorder_list~~ |
 | 查看特定工單清單 | `workorder_list(limit≤10, fields=[...], format=markdown)` | ~~format=json, limit>10~~ |
 | 單筆工單詳細 | `workorder_get(uuid)` | — |
@@ -180,7 +180,7 @@ curl -s "${API_URL}/v1/workOrders/?startTimeStart=2026-01-24T00:00:00Z&limit=20"
 ### List Work Orders
 
 ```bash
-curl -s "${API_URL}/v1/workOrders?limit=20" \
+curl -s "${API_URL}/v1/workOrders/?limit=20" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json"
 ```
@@ -190,14 +190,15 @@ curl -s "${API_URL}/v1/workOrders?limit=20" \
 - `start` (number, default: 0): Skip results for pagination
 - `status` (number): Filter by status (1-4)
 - `workOrderID` (string): Filter by work order ID (partial match)
-- `is_asap` (boolean): Filter for rush orders only
 - `startTimeStart` / `startTimeEnd` (ISO 8601, must pair): Filter by start time range
 - `endTimeStart` / `endTimeEnd` (ISO 8601, must pair): Filter by end time range
 - `deadlineTimeStart` / `deadlineTimeEnd` (ISO 8601, must pair): Filter by deadline range
 
-**Example - List in-progress rush orders**:
+(No `is_asap` query filter — the backend query struct has no such field and silently ignores it.)
+
+**Example - List in-progress work orders**:
 ```bash
-curl -s "${API_URL}/v1/workOrders/?status=2&is_asap=true&limit=10" \
+curl -s "${API_URL}/v1/workOrders/?status=2&limit=10" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -222,13 +223,15 @@ Get work order with product info, route, and operations:
 curl -s -X POST "${API_URL}/v1/workOrders/details" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "{\"work_order_id\": \"${WORK_ORDER_ID}\"}"
+  -d "{\"work_order_id\": [\"${WORK_ORDER_ID}\"]}"
 ```
+
+`work_order_id` must be a **string array** — the backend binds `WorkOrderIdList{ WorkOrderId []string }`; sending a bare string returns 400.
 
 ### Create Work Order
 
 ```bash
-curl -s -X POST "${API_URL}/v1/workOrders" \
+curl -s -X POST "${API_URL}/v1/workOrders/" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -289,7 +292,7 @@ curl -s -X DELETE "${API_URL}/v1/workOrders/${WORK_ORDER_UUID}" \
 ### List Products
 
 ```bash
-curl -s "${API_URL}/v1/products?limit=20" \
+curl -s "${API_URL}/v1/products/?limit=20" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -310,7 +313,7 @@ curl -s "${API_URL}/v1/products/${PRODUCT_UUID}" \
 ### Create Product
 
 ```bash
-curl -s -X POST "${API_URL}/v1/products" \
+curl -s -X POST "${API_URL}/v1/products/" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -378,13 +381,13 @@ curl -s "${API_URL}/v1/workOrderOpHistory/?limit=20" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-**Query Parameters**:
-- `limit`, `start`: Pagination
-- `workOrderID` (string): Filter by work order ID
-- `deviceUUID` (string): Filter by device
-- `status` (number): Filter by status
-- `action=dateRange` (required when using time filters)
-- `startTime` / `endTime` (ISO 8601, must pair): Filter by time range
+**Query Parameters** — this endpoint supports ONLY two modes:
+- **Date range**: `action=dateRange` + `startTime` / `endTime` (ISO 8601, must pair). Returns ALL records in the range (no pagination — `limit`/`start` are ignored in this mode).
+- **Plain pagination**: `limit`, `start` (only when `action` is not `dateRange`).
+
+The endpoint does **not** support `workOrderID` / `deviceUUID` / `status` filters — the handler never reads them, so they are silently ignored (you get unfiltered results).
+- To filter by a work order, use `GET /v1/workOrderOpHistory/{uuid}/byWorkOrderUuid`.
+- To filter by device/status, use `GET /v1/workOrderReport/` (supports `workOrderID`/`deviceUUID`/`status`).
 
 **Note**: This endpoint uses `startTime`/`endTime` (not `startTimeStart`/`startTimeEnd` like workOrders).
 
@@ -458,7 +461,9 @@ curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-01T00:00:00Z&star
 - `startTimeStart` / `startTimeEnd` (ISO 8601, must pair): Work order scheduled start time range (not operation time)
 - `workOrderID` (string): Filter by work order
 - `deviceUUID` (string): Filter by device
-- `limit`, `start`: Pagination
+- `status` (number): Filter by status
+
+**No pagination**: this endpoint ignores `limit`/`start` and returns ALL matching records (grouped by status). Always pass a `startTimeStart`/`startTimeEnd` range to bound the response. (The `workorder_report` MCP tool truncates client-side; raw curl has no such guard.)
 
 ### Operation History with Date Range (actual operation time filter)
 
@@ -477,15 +482,15 @@ This is the correct endpoint for "production during this week" — uses actual o
 ### Workflow: Check and Update Rush Orders
 
 ```bash
-# 1. List rush orders in progress
-curl -s "${API_URL}/v1/workOrders?status=2&is_asap=true" \
+# 1. List in-progress work orders
+curl -s "${API_URL}/v1/workOrders/?status=2" \
   -H "Authorization: Bearer ${TOKEN}"
 
-# 2. Get details for specific order
+# 2. Get details for specific order (work_order_id must be a string array)
 curl -s -X POST "${API_URL}/v1/workOrders/details" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"work_order_id": "WO-2024-001"}'
+  -d '{"work_order_id": ["WO-2024-001"]}'
 
 # 3. Mark as completed
 curl -s -X PATCH "${API_URL}/v1/workOrders/${UUID}" \
@@ -498,11 +503,11 @@ curl -s -X PATCH "${API_URL}/v1/workOrders/${UUID}" \
 
 ```bash
 # 1. Find product
-curl -s "${API_URL}/v1/products?name=Widget" \
+curl -s "${API_URL}/v1/products/?name=Widget" \
   -H "Authorization: Bearer ${TOKEN}"
 
 # 2. Create work order
-curl -s -X POST "${API_URL}/v1/workOrders" \
+curl -s -X POST "${API_URL}/v1/workOrders/" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -546,7 +551,7 @@ TOKEN=$(get_valid_token)
 TOKEN=$(./scripts/dotzero-token.sh get)
 
 # Retry the failed request with new token
-curl -s "${API_URL}/v1/workOrders" \
+curl -s "${API_URL}/v1/workOrders/" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -562,8 +567,8 @@ curl -s "${API_URL}/v1/workOrders" \
 |-----------|--------|----------|
 | List work orders | GET | `/v1/workOrders/` |
 | Get work order | GET | `/v1/workOrders/{id}` |
-| Get work order details | POST | `/v1/workOrders/details` (body: work_order_id) |
-| Create work order | POST | `/v1/workOrders` |
+| Get work order details | POST | `/v1/workOrders/details` (body: `{"work_order_id": ["..."]}` — string array) |
+| Create work order | POST | `/v1/workOrders/` |
 | Update work order | PATCH | `/v1/workOrders/{uuid}` |
 | Delete work order | DELETE | `/v1/workOrders/{uuid}` |
 | Work order count | GET | `/v1/count/workOrders` |
@@ -615,7 +620,7 @@ curl -s "${API_URL}/v1/workOrders" \
 | Op history timeline | GET | `/v1/workOrderOpHistory/{uuid}/timeline` |
 | Work order report | GET | `/v1/workOrderReport/` |
 | Update report | PATCH | `/v1/workOrderReport/{uuid}` |
-| Weekly report | GET | `/v1/report/weeklyReport` |
+| Work order dashboard | MCP | `workorder_dashboard` (one-call composite; replaces weekly report, backend route removed) |
 | Analytics operations | GET | `/v1/analytics/operations` |
 | Analytics WO report | GET | `/v1/analytics/workOrderReport` |
 | Worker efficiency ranking | MCP | `worker_efficiency_ranking` (MCP aggregation tool, no direct curl) |
@@ -629,8 +634,6 @@ curl -s "${API_URL}/v1/workOrders" \
 |-----------|--------|----------|
 | List devices | GET | `/v1/deviceInfo/` |
 | Get device | GET | `/v1/deviceInfo/{uuid}` |
-| Create device | POST | `/v1/deviceInfo/` |
-| Update device | PATCH | `/v1/deviceInfo/{uuid}` |
 | Delete device | DELETE | `/v1/deviceInfo/{uuid}` |
 | List stations | GET | `/v1/stationInfo/` |
 | Get station | GET | `/v1/stationInfo/{uuid}` |
@@ -638,6 +641,8 @@ curl -s "${API_URL}/v1/workOrders" \
 | Update station | PATCH | `/v1/stationInfo/{uuid}` |
 | Delete station | DELETE | `/v1/stationInfo/{uuid}` |
 | Station device list | GET | `/v1/stationInfo/{uuid}/deviceList` |
+
+> Device create/update are removed on the backend (`POST`/`PATCH /v1/deviceInfo` disabled); devices are read-only (list/get/delete).
 
 ### Quality & Defects
 

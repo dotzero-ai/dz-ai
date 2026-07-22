@@ -12,9 +12,11 @@ This skill provides 39 tools for interacting with the Device Topology API:
 - **Lines** (5): CRUD for production lines
 - **Devices** (5): CRUD for devices/machines
 - **Plant Floors** (4): CRUD for plant floor layouts
-- **Alarms** (5): CRUD for alarm records
+- **Alarms** (5): CRUD for alarm **groups** (an alarm group is a named container; alarm codes belong to it)
 - **Alarm Codes** (6): CRUD + batch operations for alarm code definitions
 - **Topology** (2): Count and full topology tree
+
+> **Pagination**: `limit`/`offset` are applied **client-side** by the MCP server — the backend list endpoints return all rows for the tenant/filter and ignore these params.
 
 ## Prerequisites
 
@@ -104,10 +106,10 @@ Delete a group.
 ### Factory Tools
 
 #### topo_factory_list
-List factories.
+List factories under a group.
 
 **Parameters:**
-- `group_uuid` (string, optional): Filter by group UUID
+- `group_uuid` (string, **required**): Group UUID — backend errors ("The groupUUID is not given.") without it. To list all factories regardless of group, use `GET /v1/factories/all` (see Additional Query Endpoints).
 - `limit` (number, default: 20): Max results (1-100)
 - `offset` (number, default: 0): Pagination offset
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -123,16 +125,19 @@ Get a specific factory by UUID.
 Create a new factory.
 
 **Parameters:**
-- `name` (string, required): Factory name
-- `group_uuid` (string, optional): Parent group UUID
+- `name` (string, required): Factory name (1-48 chars)
+- `group_uuid` (string, **required**): Parent group UUID (must reference an existing group)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_factory_update
-Update an existing factory.
+Update an existing factory. Backend `PUT` is a **full replace** (`name` and `groupUuid` are required server-side); the tool fetches the current record and merges your changes, preserving `groupUuid`.
 
 **Parameters:**
 - `id` (string, required): Factory UUID
 - `name` (string, optional): Update name
+- `longitude` (number, optional): Update longitude
+- `latitude` (number, optional): Update latitude
+- `imgUrl` (string, optional): Update image URL
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_factory_delete
@@ -146,10 +151,10 @@ Delete a factory.
 ### Line Tools
 
 #### topo_line_list
-List production lines.
+List production lines under a factory.
 
 **Parameters:**
-- `factory_uuid` (string, optional): Filter by factory UUID
+- `factory_uuid` (string, **required**): Factory UUID — backend errors ("The factoryUUID is not given.") without it. To list all lines, use `GET /v1/lines/all`.
 - `limit` (number, default: 20): Max results (1-100)
 - `offset` (number, default: 0): Pagination offset
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -170,11 +175,13 @@ Create a new production line.
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_line_update
-Update an existing line.
+Update an existing line. Backend `PUT` is a **full replace**: `name` and `factory_uuid` are both required server-side, so always pass `factory_uuid` (a name-only update fails validation).
 
 **Parameters:**
 - `id` (string, required): Line UUID
 - `name` (string, optional): Update name
+- `factory_uuid` (string, required for update): Parent factory UUID
+- `longitude` (number, optional), `latitude` (number, optional), `imgUrl` (string, optional)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_line_delete
@@ -188,13 +195,12 @@ Delete a line.
 ### Device Tools
 
 #### topo_device_list
-List devices/machines.
+List devices/machines under a line.
 
 **Parameters:**
-- `line_uuid` (string, optional): Filter by line UUID
-- `factory_uuid` (string, optional): Filter by factory UUID
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `line_uuid` (string, **required**): Line UUID — backend errors ("The lineUUID is not given.") without it. There is no factory-level filter on this endpoint; to list all devices use `GET /v1/devices/all`.
+- `limit` (number, default: 20): Max results (1-100, client-side)
+- `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_device_get
@@ -241,16 +247,19 @@ Get a plant floor layout by UUID.
 Create a new plant floor layout.
 
 **Parameters:**
-- `name` (string, required): Floor name
-- `factory_uuid` (string, required): Parent factory UUID
+- `canvas` (string, **required**): Canvas layout data (JSON string / layout definition) — the only required field server-side
+- `interval_time` (number, optional): Refresh interval in seconds
 - `response_format` ('markdown'|'json', default: 'markdown')
+
+> There is no `factory_uuid` / `name` on create. `name` is nullable and set separately via `PATCH /v1/plantFloors/{uuid}/name` with body `{"name": "..."}`.
 
 #### topo_plant_floor_update
 Update an existing plant floor.
 
 **Parameters:**
 - `id` (string, required): Plant floor UUID
-- `name` (string, optional): Update name
+- `canvas` (string, optional): Update canvas layout
+- `interval_time` (number, optional): Update interval
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_plant_floor_delete
@@ -263,53 +272,59 @@ Delete a plant floor.
 
 ### Alarm Tools
 
+An **alarm** is a named **group** (container) that holds alarm codes. It is tenant-wide — it is not bound to a device. (Devices reference an alarm group via `alarm_uuid` on the device record.)
+
 #### topo_alarm_list
-List alarm records.
+List all alarm groups for the tenant.
 
 **Parameters:**
-- `device_uuid` (string, optional): Filter by device UUID
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `limit` (number, default: 20): Max results (1-100, client-side)
+- `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
+> No `device_uuid` filter exists — listing is tenant-wide only.
+
 #### topo_alarm_get
-Get a specific alarm record by UUID.
+Get a specific alarm group by UUID.
 
 **Parameters:**
-- `id` (string, required): Alarm UUID
+- `id` (string, required): Alarm group UUID
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_alarm_create
-Create a new alarm record.
+Create a new alarm group. Duplicate names are rejected server-side.
 
 **Parameters:**
-- `device_uuid` (string, required): Device UUID
-- `alarm_code_uuid` (string, required): Alarm code UUID
+- `name` (string, **required**, 1-20 chars): Alarm group name
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_alarm_update
-Update an existing alarm record.
+Update an existing alarm group (rename).
 
 **Parameters:**
-- `id` (string, required): Alarm UUID
+- `id` (string, required): Alarm group UUID
+- `name` (string, required): New name (1-20 chars)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_alarm_delete
-Delete an alarm record.
+Delete an alarm group.
 
 **Parameters:**
-- `id` (string, required): Alarm UUID
+- `id` (string, required): Alarm group UUID
 
 ---
 
 ### Alarm Code Tools
 
+An **alarm code** is a numeric code belonging to one alarm group (`alarm_uuid`).
+
 #### topo_alarm_code_list
-List alarm code definitions.
+List alarm codes for a given alarm group.
 
 **Parameters:**
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `alarm_uuid` (string, **required**): Parent alarm group UUID — backend errors ("The alarmUUID is not given.") without it
+- `limit` (number, default: 20): Max results (1-100, client-side)
+- `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_alarm_code_get
@@ -320,20 +335,26 @@ Get a specific alarm code by UUID.
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_alarm_code_create
-Create a new alarm code definition.
+Create a new alarm code under an alarm group.
 
 **Parameters:**
-- `code` (string, required): Alarm code
-- `name` (string, required): Alarm name/description
+- `code` (number, **required**): Alarm code (integer)
+- `alarm_uuid` (string, **required**, uuid4): Parent alarm group UUID (must exist)
+- `category` (string, optional): Category (e.g. "Controller")
+- `level` (number, optional): Severity level (integer)
+- `messageEn` (string, optional): English message
+- `messageTc` (string, optional): Traditional Chinese message
 - `response_format` ('markdown'|'json', default: 'markdown')
+
+> There is no `name` field on alarm codes.
 
 #### topo_alarm_code_update
 Update an existing alarm code.
 
 **Parameters:**
 - `id` (string, required): Alarm code UUID
-- `code` (string, optional): Update code
-- `name` (string, optional): Update name
+- `code` (number, optional): Update code (integer)
+- `category` / `level` / `messageEn` / `messageTc` (optional): as in create
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_alarm_code_delete
@@ -343,10 +364,12 @@ Delete an alarm code.
 - `id` (string, required): Alarm code UUID
 
 #### topo_alarm_code_batch
-Batch create or update alarm codes.
+Batch **add and/or remove** alarm codes in one call (this is add + delete, **not** update). Maps to `POST /v1/alarmCodes/batch` with body `{add:[...], remove:[...]}`.
 
 **Parameters:**
-- `items` (array, required): Array of alarm code objects
+- `add` (array, optional): Alarm codes to create — each `{code:int, alarm_uuid:uuid4 (required per item), category?, level?, messageEn?, messageTc?}`
+- `remove` (array, optional): Alarm codes to delete (identified by `uuid`)
+- `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
 
@@ -394,19 +417,33 @@ topo_device_create(name: "CNC-001", line_uuid: "line-uuid")
 topo_device_create(name: "CNC-002", line_uuid: "line-uuid")
 ```
 
+## Additional Query Endpoints
+
+These backend endpoints have no dedicated MCP tool but are useful and callable directly:
+
+| Purpose | Endpoint |
+|---------|----------|
+| Search devices by name (returns topology subtree) | `GET /v1/topology/search/device?name=` |
+| List all factories / lines / devices (no parent UUID needed) | `GET /v1/factories/all`, `/v1/lines/all`, `/v1/devices/all` |
+| Device count under a topology node | `GET /v1/devices/count?type=group\|factory\|line&uuid=` (both required; `uuid=null` = unassigned line) |
+| List plant floors | `GET /v1/plantFloors/` (optionally `?topologyType=&topologyUuid=`) |
+| Create alarm group + its codes in one call | `POST /v1/alarms/withAlarmCodes` body `{name, alarmCodes:[...]}` |
+| Set plant floor name | `PATCH /v1/plantFloors/{uuid}/name` body `{"name":"..."}` |
+
 ## Error Handling
 
-| Error | Solution |
-|-------|----------|
-| 401 Unauthorized | Call `auth_login` with tenant_id |
-| 404 Not Found | Verify the UUID |
-| 422 Validation | Check input parameters |
+This API signals **almost all errors as HTTP 500** with a plain-text message body (both "not found" and validation failures). Only auth returns 401.
+
+| Error | Meaning / Solution |
+|-------|--------------------|
+| 401 Unauthorized | Not authenticated — call `auth_login` with tenant_id |
+| 500 + text message | Validation failure, missing required query param, or resource not found — read the message body (e.g. "The groupUUID is not given.", "invalid groupUuid") |
 
 ## MCP Server
 
 - **Package**: `@dotzero.ai/device-topology-mcp`
 - **Tools**: 39 (8 basic + 31 advanced, unlocked after auth)
-- **Note**: This API uses PUT (not PATCH) for update operations
+- **Note**: Updates use `PUT` (full replace). The one exception is the plant-floor name, which is set via `PATCH /v1/plantFloors/{uuid}/name`.
 
 ## Repository
 

@@ -10,18 +10,14 @@ This skill provides access to all DotZero system integrations through MCP server
 
 ### 1. Authentication First
 
-All DotZero services require authentication with a **tenant_id**.
+All DotZero services share one authentication. You only need the user's **tenant_id**.
 
-**IMPORTANT**: If you don't know the user's tenant_id, you must ask them for it.
+**IMPORTANT**: If you don't know the user's tenant_id, ask them for it. **DO NOT ask for email or password** — calling `auth_login` with only `tenant_id` opens a secure browser login form where the user enters credentials directly; the password never passes through the AI.
 
 ```
-# Use the auth skill or any service's auth_login tool
-# IMPORTANT: Never hardcode passwords. Ask the user for credentials.
-auth_login(
-  email: "user@example.com",
-  password: "<ask-user>",
-  tenant_id: "your-tenant-id"  # Required!
-)
+# Use the auth skill or any service's auth_login tool.
+# Opens a browser login form; email/password are entered there, not by the AI.
+auth_login(tenant_id: "your-tenant-id")
 ```
 
 ### 2. Use Service Tools
@@ -42,7 +38,7 @@ Centralized authentication for all DotZero services.
 
 | Tool | Description |
 |------|-------------|
-| `auth_login` | Authenticate with email, password, and tenant_id |
+| `auth_login` | Authenticate with `tenant_id` (opens secure browser login; no password from AI) |
 | `auth_refresh` | Refresh an expired token |
 | `auth_status` | Check authentication configuration |
 
@@ -63,11 +59,11 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 | Products | 6 | `product_list`, `product_get`, `product_create`, `product_update`, `product_details`, `product_copy` |
 | Workers | 5 | `worker_list`, `worker_get`, `worker_create`, `worker_update`, `worker_delete` |
 | Operation History | 7 | `operation_history_list`, `operation_history_by_workorder`, `operation_history_get`, `operation_history_create`, `operation_history_create_many`, `operation_history_delete`, `operation_history_timeline` |
-| Reports & Analytics | 10 | `workorder_report`, `report_update`, `weekly_report`, `analytics_operations`, `analytics_workorder_report`, `worker_efficiency_ranking`, `device_utilization_ranking`, `production_summary`, `workorder_dashboard`, `material_production_ranking` — **物料產量排名用 `material_production_ranking`（正確時間過濾）** |
+| Reports & Analytics | 9 | `workorder_report`, `report_update`, `analytics_operations`, `analytics_workorder_report`, `worker_efficiency_ranking`, `device_utilization_ranking`, `production_summary`, `workorder_dashboard`, `material_production_ranking` — **物料產量排名用 `material_production_ranking`（正確時間過濾）；週報端點後端已停用，改用 `workorder_dashboard`** |
 | Routes | 7 | `route_list`, `route_get`, `route_create`, `route_update`, `route_delete`, `route_by_product`, `route_copy` |
 | Operations | 5 | `operation_list`, `operation_get`, `operation_create`, `operation_update`, `operation_delete` |
 | Route Operations | 6 | `route_operation_list`, `route_operation_get`, `route_operation_create`, `route_operation_update`, `route_operation_delete`, `route_operation_by_route` |
-| Devices | 5 | `device_list`, `device_get`, `device_create`, `device_update`, `device_delete` |
+| Devices | 3 | `device_list`, `device_get`, `device_delete` — **後端 device 建立/更新已停用，僅唯讀 + 刪除** |
 | Defect Reasons | 4 | `defect_reason_list`, `defect_reason_create`, `defect_reason_update`, `defect_reason_delete` |
 | Defect Reason Categories | 4 | `defect_reason_category_list`, `defect_reason_category_get`, `defect_reason_category_create`, `defect_reason_category_update` |
 | Stations | 6 | `station_list`, `station_get`, `station_create`, `station_update`, `station_delete`, `station_device_list` |
@@ -182,6 +178,75 @@ Generate charts (PNG/JPG) and export data (CSV/XLSX) from DotZero manufacturing 
 
 ---
 
+### GDT API (Engineering Drawings)
+
+Engineering drawing search, similarity retrieval, and drawing feature extraction (dimensions / GD&T / hole counts). Read-only.
+
+- **MCP Server**: `@dotzero.ai/gdt-mcp`
+- **Skill**: [gdt-api](../gdt-api/SKILL.md)
+- **Tools**: 5 (2 auth + 3 read)
+
+| Tool | Description |
+|------|-------------|
+| `auth_login`, `auth_status` | Authenticate & check status |
+| `gdt_drawing_list` | List engineering drawings (filter by q / customer / product) |
+| `gdt_drawing_similar` | Find drawings similar to a given drawing id |
+| `gdt_feature_list` | Dimensions / GD&T / hole-count features of a drawing |
+
+---
+
+### SCM API (Supply Chain)
+
+Queries for deliveries, QA inspection, supplier performance, and billable invoices. Read-only.
+
+- **MCP Server**: `@dotzero.ai/scm-mcp`
+- **Skill**: [scm-api](../scm-api/SKILL.md)
+- **Tools**: 6 (2 auth + 4 read)
+
+| Tool | Description |
+|------|-------------|
+| `auth_login`, `auth_status` | Authenticate & check status |
+| `scm_delivery_list` | Deliverable / outstanding deliveries |
+| `scm_qa_inspectable` | Items awaiting QA inspection |
+| `scm_supplier_performance` | Supplier performance metrics (by period YYYY-MM) |
+| `scm_invoice_billable` | Billable invoice items with amounts |
+
+---
+
+### SD API (Sales & Distribution)
+
+Customer sales orders and customer master queries. Read-only.
+
+- **MCP Server**: `@dotzero.ai/sd-mcp`
+- **Skill**: [sd-api](../sd-api/SKILL.md)
+- **Tools**: 5 (2 auth + 3 read)
+
+| Tool | Description |
+|------|-------------|
+| `auth_login`, `auth_status` | Authenticate & check status |
+| `sd_order_list` | List customer sales orders (filters + pagination) |
+| `sd_order_get` | Get one sales order by UUID (not business number) |
+| `sd_customer_list` | List customers |
+
+---
+
+### WMS API (Warehouse)
+
+Stock levels, low-stock alerts, and work-order picking progress. Read-only.
+
+- **MCP Server**: `@dotzero.ai/wms-mcp`
+- **Skill**: [wms-api](../wms-api/SKILL.md)
+- **Tools**: 5 (2 auth + 3 read)
+
+| Tool | Description |
+|------|-------------|
+| `auth_login`, `auth_status` | Authenticate & check status |
+| `wms_stock_query` | Query product storage / stock levels |
+| `wms_low_stock_list` | Products below minimal stock level |
+| `wms_picking_progress` | Work-order picking completion rate (planned-date range) |
+
+---
+
 ### Gateway MCP (Unified Entry Point)
 
 Single MCP server that dynamically loads tools from all DotZero services on demand.
@@ -194,9 +259,11 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | `auth_login` | Unified login (one JWT works for all services) |
 | `auth_status` | Check auth + show configured services |
 | `auth_refresh` | Refresh expired token |
-| `find_tools` | Search tools by keyword across all ~243 tools |
+| `find_tools` | Search tools by keyword across the gateway tool catalog |
 | `list_services` | Show available/loaded services |
 | `load_service` | Load a service's tools on demand |
+
+> **Note**: The gateway tool-catalog (`packages/dotzero-mcp/src/tool-catalog.ts`) now indexes all 10 services — work-order, spc, equipment, device-topology, oee, export, **gdt, scm, sd, wms** — so `find_tools` / `load_service` can reach every service through the gateway (`auth_login` / `auth_status` are handled by `loadService` and intentionally excluded from the catalog). You may still use each service's dedicated MCP server (`dotzero-gdt`, `dotzero-scm`, `dotzero-sd`, `dotzero-wms`) directly.
 
 ---
 
@@ -205,14 +272,18 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | MCP Server | Tools |
 |------------|-------|
 | auth-mcp | 3 |
-| work-order-mcp | 100 |
+| work-order-mcp | 103 |
 | spc-mcp | 49 |
 | equipment-mcp | 12 |
 | device-topology-mcp | 39 |
 | oee-mcp | 21 |
 | export-mcp | 13 |
+| gdt-mcp | 5 |
+| scm-mcp | 6 |
+| sd-mcp | 5 |
+| wms-mcp | 5 |
 | dotzero-mcp (gateway) | 6 + dynamic |
-| **Total** | **~243** |
+| **Total** | **~267** |
 
 ---
 
@@ -234,7 +305,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  auth_login(email, password, tenant_id)                      │
+│  auth_login(tenant_id) → opens browser login                 │
 │                                                              │
 │  Returns: token, refresh_token, user info                    │
 └──────────────────────────┬──────────────────────────────────┘
@@ -260,6 +331,10 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | `EQUIPMENT_API_URL` | Equipment API |
 | `DEVICE_TOPOLOGY_API_URL` | Device Topology API |
 | `OEE_API_URL` | OEE API |
+| `GDT_API_URL` | GDT API |
+| `SCM_API_URL` | SCM API |
+| `SD_API_URL` | SD API |
+| `WMS_API_URL` | WMS API |
 
 ### Optional
 
@@ -297,6 +372,18 @@ claude mcp add dotzero-device-topology --command "node" --args "packages/device-
 
 # OEE
 claude mcp add dotzero-oee --command "node" --args "packages/oee-mcp/dist/index.js" --env "OEE_API_URL=https://dotzerotech-oee-api.dotzero.app"
+
+# GDT (Engineering Drawings)
+claude mcp add dotzero-gdt --command "node" --args "packages/gdt-mcp/dist/index.js" --env "GDT_API_URL=https://gdt-backend.dotzero.app"
+
+# SCM (Supply Chain)
+claude mcp add dotzero-scm --command "node" --args "packages/scm-mcp/dist/index.js" --env "SCM_API_URL=https://dotzerotech-scm-backend.dotzero.app"
+
+# SD (Sales & Distribution)
+claude mcp add dotzero-sd --command "node" --args "packages/sd-mcp/dist/index.js" --env "SD_API_URL=https://sales-distribution-api.dotzero.app"
+
+# WMS (Warehouse)
+claude mcp add dotzero-wms --command "node" --args "packages/wms-mcp/dist/index.js" --env "WMS_API_URL=https://dotzerotech-wms-backend.dotzero.app"
 ```
 
 ---

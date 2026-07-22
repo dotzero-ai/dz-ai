@@ -4,18 +4,18 @@ MCP skill for managing work orders, products, workers, and operation history in 
 
 ## Overview
 
-This skill provides 100 tools for interacting with the Work Order API:
+This skill provides 103 tools for interacting with the Work Order API:
 
 - **Authentication** (2): Login and check auth status
 - **Work Orders** (7): Full CRUD operations with filtering, pagination, and count
 - **Products** (6): Manage product catalog with details and copy
 - **Workers** (5): Full CRUD for worker directory
 - **Operation History** (7): Track operation history, create/delete records, view timeline
-- **Reports & Analytics** (8): Work order reports, weekly reports, operation analytics, worker efficiency ranking, device utilization ranking, production summary
+- **Reports & Analytics** (9): Work order reports, operation analytics, worker efficiency ranking, device utilization ranking, production summary, one-call dashboard, material production ranking
 - **Routes** (7): Production route management with copy
 - **Operations** (5): Operation (工序) CRUD
 - **Route Operations** (6): Route-operation mapping management
-- **Devices** (5): Device/machine management
+- **Devices** (3): Device/machine directory (read-only: list/get/delete — create/update removed on backend)
 - **Defect Reasons** (4): Defect reason management
 - **Defect Reason Categories** (4): Defect category management
 - **Stations** (6): Station management with device lists
@@ -26,6 +26,7 @@ This skill provides 100 tools for interacting with the Work Order API:
 - **Warehouse Storage** (4): Storage location management
 - **Product Storage** (3): Product storage tracking
 - **WMS** (4): Warehouse management system operations
+- **Cache** (4): Local SQLite cache for large-dataset SQL analysis (download / query / status / clear)
 
 ## Prerequisites
 
@@ -108,7 +109,6 @@ List work orders with optional filters.
 - `deadline_start` (string, optional): Filter by deadline (ISO 8601, range start)
 - `deadline_end` (string, optional): Filter by deadline (ISO 8601, range end)
 - `work_order_id` (string, optional): Filter by work order ID (partial match)
-- `is_asap` (boolean, optional): Filter for rush orders only
 - `limit` (number, default: 20): Max results (1-100)
 - `offset` (number, default: 0): Skip results for pagination
 - `response_format` ('markdown'|'json', default: 'markdown'): Output format
@@ -117,7 +117,7 @@ List work orders with optional filters.
 
 **Example:**
 ```
-workorder_list(status: 2, is_asap: true, limit: 10)
+workorder_list(status: 2, limit: 10)
 ```
 
 #### workorder_get
@@ -286,19 +286,16 @@ Get a specific worker by UUID.
 ### Operation History Tools
 
 #### operation_history_list
-List work order operation history with optional filters.
+Browse operation history records. Two modes only — the backend does NOT support work-order/worker/device/status filters here (they are silently ignored).
 
 **Parameters:**
-- `work_order_uuid` (string, optional): Filter by work order UUID
-- `work_order_id` (string, optional): Filter by work order ID
-- `worker_uuid` (string, optional): Filter by worker UUID
-- `device_uuid` (string, optional): Filter by device UUID
-- `status` (number, optional): Filter by status
-- `start_time_start` (string, optional): Filter by time range (ISO 8601, start)
-- `start_time_end` (string, optional): Filter by time range (ISO 8601, end)
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Skip results for pagination
+- `start_time_start` (string, optional): Actual-operation time range start (ISO 8601). When paired with `start_time_end`, runs `action=dateRange` and returns ALL records in range (limit/offset ignored — keep the range tight).
+- `start_time_end` (string, optional): Actual-operation time range end (ISO 8601).
+- `limit` (number, default: 20): Max results (1-100). Applies only to plain pagination (no time range).
+- `offset` (number, default: 0): Skip results for pagination. Applies only to plain pagination.
 - `response_format` ('markdown'|'json', default: 'markdown')
+
+**To filter by work order:** use `operation_history_by_workorder`. **To filter by device/status:** use `workorder_report`.
 
 **Returns:** List of operation history records
 
@@ -322,13 +319,12 @@ Get work order operation report with filters.
 - `start_time_start` (string, optional): Report period start (ISO 8601)
 - `start_time_end` (string, optional): Report period end (ISO 8601)
 - `work_order_id` (string, optional): Filter by work order ID
-- `worker_uuid` (string, optional): Filter by worker UUID
 - `device_uuid` (string, optional): Filter by device UUID
-- `limit` (number, default: 50): Max results (1-100)
-- `offset` (number, default: 0): Skip results for pagination
+- `limit` (number, default: 50): Max results (1-100). NOTE: the backend does not paginate this endpoint — it returns all matching records; limit/offset are applied client-side (truncation) by the MCP tool. Always pass a time range to keep the result manageable.
+- `offset` (number, default: 0): Client-side skip for pagination.
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-**Returns:** Operation report data
+**Returns:** Operation report data (individual WorkOrderOpHistory records)
 
 **Example:**
 ```
@@ -347,12 +343,28 @@ Update an existing work order report.
 
 **Returns:** Updated report
 
-#### weekly_report
-Get weekly production report summary.
+#### workorder_dashboard
+ONE-CALL composite dashboard covering all work-order metrics for a period (replaces analytics_workorder_report + production_summary + worker_efficiency_ranking + device_utilization_ranking). Use for "工單儀表板"/"生產總覽"/"overview"/"完整報告"/工單週報.
 
-**Parameters:** None
+**Parameters:**
+- `start_time_start` (string, **required**): Period start (ISO 8601, paired)
+- `start_time_end` (string, **required**): Period end (ISO 8601, paired)
+- `work_order_id` (string, optional): Filter to a specific work order ID
+- `top_n` (number, default: 5): Rows in worker/device rankings (1-20)
+- `sections` (string[], default: all): Any of `summary`, `status`, `production`, `workers`, `devices`
 
-**Returns:** Weekly report data
+**Returns:** Combined KPIs, status distribution, production table, top-N worker/device rankings (~2KB)
+
+#### material_production_ranking
+Rank materials (物料/料號) by good parts produced within a period. Filters by ACTUAL operation time (action=dateRange on workOrderOpHistory), so it reflects what was actually produced. Use for "做最多的物料"/"最多產量的料號"/"top materials".
+
+**Parameters:**
+- `start_time_start` (string, **required**): Actual-operation period start (ISO 8601 with +08:00)
+- `start_time_end` (string, **required**): Actual-operation period end (ISO 8601 with +08:00)
+- `top_n` (number, default: 10): Materials to show (1-50)
+- `work_order_id` (string, optional): Filter to a specific work order ID
+
+**Returns:** Ranked materials with ops/qty/good/defect
 
 #### analytics_operations
 Get operation analytics data.
@@ -621,24 +633,7 @@ Get a specific device by UUID.
 
 **Returns:** Device details
 
-#### device_create
-Create a new device.
-
-**Parameters:**
-- `name` (string, required): Device name
-- `memo` (string, optional): Notes
-
-**Returns:** Created device
-
-#### device_update
-Update an existing device.
-
-**Parameters:**
-- `id` (string, required): Device UUID
-- `name` (string, optional): Update name
-- `memo` (string, optional): Update notes
-
-**Returns:** Updated device
+> Device create/update are not available — the backend `POST /v1/deviceInfo/` and `PATCH /v1/deviceInfo/{uuid}` routes are removed. Devices are read-only here (list/get/delete).
 
 #### device_delete
 Delete a device by UUID.
@@ -1063,6 +1058,49 @@ Get count of products at or below minimum stock levels.
 
 ---
 
+### Cache Tools
+
+Local SQLite cache for analyzing large datasets (>500 records) without consuming the context window. Download once, then run SQL against the cache.
+
+#### workorder_cache_download
+Download all work order records for a date range into the local SQLite cache (no 500-record limit, unlike the dashboard tools).
+
+**Parameters:**
+- `start_date` (string, **required**): Period start, e.g. `"2026-01-01"`
+- `end_date` (string, **required**): Period end, e.g. `"2026-01-07"`
+- `force_refresh` (boolean, default: false): Re-download even if cached
+- `source` ('operations'|'op_history'|'both', default: 'both'): Which data to fetch
+
+**Returns:** Summary of downloaded records (total count, database path)
+
+#### workorder_cache_query
+Run a read-only SQL SELECT against the local cache. Tables: `workorder_operations`, `op_history`, `cache_meta` (see tool description for columns). Only SELECT is allowed.
+
+**Parameters:**
+- `sql` (string, **required**): SQL SELECT query
+- `limit` (number, default/max per tool): Max rows to return (max 5000)
+
+**Returns:** Query result rows
+
+#### workorder_cache_status
+Show cache status: database path, table row counts, cached date ranges.
+
+**Parameters:** None
+
+**Returns:** Cache status summary
+
+#### workorder_cache_clear
+Clear cached data (all, or filtered by date range and source table).
+
+**Parameters:**
+- `start_date` (string, optional): Clear from this date (inclusive); empty = all
+- `end_date` (string, optional): Clear up to this date (inclusive); empty = all
+- `source` ('operations'|'op_history'|'both', default: 'both'): Which table to clear
+
+**Returns:** Count of cleared records
+
+---
+
 ### Extended Work Order Tools
 
 #### workorder_count
@@ -1184,11 +1222,11 @@ auth_login(email: "operator@example.com", password: "<ask-user>", tenant_id: "my
 workorder_list(limit: 5)
 ```
 
-### Workflow: Check rush orders and update status
+### Workflow: Check in-progress orders and update status
 
 ```
-# 1. List rush orders in progress
-workorder_list(status: 2, is_asap: true)
+# 1. List in-progress work orders
+workorder_list(status: 2)
 
 # 2. Get details for a specific order
 workorder_details(work_order_id: "WO-2024-001")
