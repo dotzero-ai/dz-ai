@@ -59,11 +59,11 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 | Products | 6 | `product_list`, `product_get`, `product_create`, `product_update`, `product_details`, `product_copy` |
 | Workers | 5 | `worker_list`, `worker_get`, `worker_create`, `worker_update`, `worker_delete` |
 | Operation History | 7 | `operation_history_list`, `operation_history_by_workorder`, `operation_history_get`, `operation_history_create`, `operation_history_create_many`, `operation_history_delete`, `operation_history_timeline` |
-| Reports & Analytics | 10 | `workorder_report`, `report_update`, `weekly_report`, `analytics_operations`, `analytics_workorder_report`, `worker_efficiency_ranking`, `device_utilization_ranking`, `production_summary`, `workorder_dashboard`, `material_production_ranking` — **物料產量排名用 `material_production_ranking`（正確時間過濾）** |
+| Reports & Analytics | 9 | `workorder_report`, `report_update`, `analytics_operations`, `analytics_workorder_report`, `worker_efficiency_ranking`, `device_utilization_ranking`, `production_summary`, `workorder_dashboard`, `material_production_ranking` — **物料產量排名用 `material_production_ranking`（正確時間過濾）；週報端點後端已停用，改用 `workorder_dashboard`** |
 | Routes | 7 | `route_list`, `route_get`, `route_create`, `route_update`, `route_delete`, `route_by_product`, `route_copy` |
 | Operations | 5 | `operation_list`, `operation_get`, `operation_create`, `operation_update`, `operation_delete` |
 | Route Operations | 6 | `route_operation_list`, `route_operation_get`, `route_operation_create`, `route_operation_update`, `route_operation_delete`, `route_operation_by_route` |
-| Devices | 5 | `device_list`, `device_get`, `device_create`, `device_update`, `device_delete` |
+| Devices | 3 | `device_list`, `device_get`, `device_delete` — **後端 device 建立/更新已停用，僅唯讀 + 刪除** |
 | Defect Reasons | 4 | `defect_reason_list`, `defect_reason_create`, `defect_reason_update`, `defect_reason_delete` |
 | Defect Reason Categories | 4 | `defect_reason_category_list`, `defect_reason_category_get`, `defect_reason_category_create`, `defect_reason_category_update` |
 | Stations | 6 | `station_list`, `station_get`, `station_create`, `station_update`, `station_delete`, `station_device_list` |
@@ -263,7 +263,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | `list_services` | Show available/loaded services |
 | `load_service` | Load a service's tools on demand |
 
-> **Note**: The gateway tool-catalog (`packages/dotzero-mcp/src/tool-catalog.ts`) currently indexes only 6 services — work-order, spc, equipment, device-topology, oee, export (~226 tools). The **gdt, scm, sd, and wms** services are **not yet in the catalog**, so `find_tools` / `load_service` cannot reach them yet — use their dedicated MCP servers (`dotzero-gdt`, `dotzero-scm`, `dotzero-sd`, `dotzero-wms`) directly. Adding them to the catalog is planned follow-up work.
+> **Note**: The gateway tool-catalog (`packages/dotzero-mcp/src/tool-catalog.ts`) now indexes all 10 services — work-order, spc, equipment, device-topology, oee, export, **gdt, scm, sd, wms** — so `find_tools` / `load_service` can reach every service through the gateway (`auth_login` / `auth_status` are handled by `loadService` and intentionally excluded from the catalog). You may still use each service's dedicated MCP server (`dotzero-gdt`, `dotzero-scm`, `dotzero-sd`, `dotzero-wms`) directly.
 
 ---
 
@@ -272,7 +272,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | MCP Server | Tools |
 |------------|-------|
 | auth-mcp | 3 |
-| work-order-mcp | 100 |
+| work-order-mcp | 103 |
 | spc-mcp | 49 |
 | equipment-mcp | 12 |
 | device-topology-mcp | 39 |
@@ -283,7 +283,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | sd-mcp | 5 |
 | wms-mcp | 5 |
 | dotzero-mcp (gateway) | 6 + dynamic |
-| **Total** | **~264** |
+| **Total** | **~267** |
 
 ---
 
