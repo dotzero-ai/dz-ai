@@ -47,7 +47,7 @@ TOKEN=$(get_valid_token)
 
 ### List Sales Orders
 
-銷售訂單清單。`query` 決定過濾模式：`all`（全部，不帶其他過濾）、`exact`（精確比對）、`fuzzy`（模糊比對）。
+銷售訂單清單。`query` 決定過濾模式：`all`（全部，不帶其他過濾）、`exact`（精確比對）、`fuzzy`（模糊比對）。**`query` 為必填、無預設**，省略或給其他值會回 400。
 
 ```bash
 # 全部訂單（前 20 筆）
@@ -68,24 +68,32 @@ curl -s "${API_URL}/order?query=fuzzy&sdCustomerName=Acme&limit=20" \
 
 | 參數 | 說明 | 適用模式 |
 |------|------|----------|
-| `query` | 過濾模式：`all` / `exact` / `fuzzy`（預設 `all`） | 全部 |
-| `status` | 訂單狀態 | exact / fuzzy |
+| `query` | **必填**，過濾模式：`all` / `exact` / `fuzzy`（無預設，省略回 400） | 全部 |
+| `status` | 訂單狀態（有效值見下方 Order Status Values） | exact / fuzzy |
 | `sdCustomerNumber` | 客戶編號 | exact / fuzzy |
 | `sdCustomerName` | 客戶名稱 | exact / fuzzy |
 | `number` | 訂單編號（業務編號） | exact / fuzzy |
 | `customerOrderNumber` | 客戶方訂單編號 | exact / fuzzy |
-| `deliveryDateFrom` | 交貨日起（含） | exact / fuzzy |
-| `deliveryDateTo` | 交貨日迄（含） | exact / fuzzy |
-| `createTimeFrom` | 建立時間起（含） | exact / fuzzy |
-| `createTimeTo` | 建立時間迄（含） | exact / fuzzy |
-| `offset` | 分頁位移 | 全部 |
-| `limit` | 每頁筆數 | 全部 |
-| `orderBy` | 排序欄位 | 全部 |
-| `order` | 排序方向（`asc` / `desc`） | 全部 |
+| `shipMethod` | 出貨方式 | exact / fuzzy |
+| `shipAddress` | 出貨地址 | exact / fuzzy |
+| `remarks` | 備註 | exact / fuzzy |
+| `currency` | 幣別 | exact / fuzzy |
+| `priority` | 優先度（整數） | exact / fuzzy |
+| `deliveryDateFrom` / `deliveryDateTo` | 交貨日起迄（含），RFC3339 | exact / fuzzy |
+| `createTimeFrom` / `createTimeTo` | 建立時間起迄（含），RFC3339 | exact / fuzzy |
+| `updateTimeFrom` / `updateTimeTo` | 更新時間起迄（含），RFC3339 | exact / fuzzy |
+| `totalAmountFrom` / `totalAmountTo` | 總金額起迄（含），十進位數字 | exact / fuzzy |
+| `priorityFrom` / `priorityTo` | 優先度起迄（含），整數 | exact / fuzzy |
+| `offset` | 分頁位移（預設 0） | 全部 |
+| `limit` | 每頁筆數（預設 20） | 全部 |
+| `orderBy` | 排序欄位，僅限 `createTime` / `updateTime` / `number` / `deliveryDate` / `totalAmount` / `priority`（預設 `createTime`，其他值回 400） | 全部 |
+| `order` | 排序方向 `asc` / `desc`（預設 `desc`） | 全部 |
 
-> `query=all` 時只送分頁 / 排序參數，其餘過濾欄位會被忽略。
+> - `query=all` 只能帶分頁 / 排序參數；帶任何過濾或區間參數會回 400 `query=all does not accept other parameters.`
+> - `query=exact` / `fuzzy` 必須至少帶一個過濾條件，否則回 400 `query=exact/fuzzy requires at least one filter condition.`
+> - 時間區間參數（`deliveryDate*` / `createTime*` / `updateTime*`）須為 RFC3339 格式（如 `2026-01-01T00:00:00Z`），純日期 `2026-07-01` 會回 400。
 
-**回傳**: `{ "data": [...], "total": N }`。每筆訂單含 `uuid`、`number`、`sdCustomerName`、`sdCustomerNumber`、`status`、`totalAmount`、`currency`、`deliveryDate`、`priority` 等欄位。
+**回傳**: `{ "data": [...], "offset": N, "limit": N, "total": N }`。每筆訂單含 `uuid`、`number`、`sdCustomerName`、`sdCustomerNumber`、`status`、`totalAmount`、`currency`、`deliveryDate`、`priority` 等欄位。
 
 ### Get Sales Order
 
@@ -101,13 +109,27 @@ curl -s "${API_URL}/order/${ORDER_UUID}" \
 
 **回傳**: 單筆訂單完整物件，含明細品項。
 
+### Order Status Values
+
+訂單與品項的有效狀態列舉，建構 `status` 過濾條件前可先查詢：
+
+```bash
+# 訂單狀態列舉
+curl -s "${API_URL}/order/status" -H "Authorization: Bearer ${TOKEN}"
+# ["open","confirmed","scheduled","in_production","ready_to_ship","partial_shipped","shipped","completed","cancelled"]
+
+# 訂單品項狀態列舉
+curl -s "${API_URL}/item/status" -H "Authorization: Bearer ${TOKEN}"
+# ["open","scheduled","in_production","ready_to_ship","shipped","cancelled"]
+```
+
 ---
 
 ## Customer Operations
 
 ### List Customers
 
-客戶清單。`query` 過濾模式同 Order（`all` / `exact` / `fuzzy`）。
+客戶清單。`query` 過濾模式同 Order（`all` / `exact` / `fuzzy`），**必填、無預設**。
 
 ```bash
 # 全部客戶（前 20 筆）
@@ -128,21 +150,35 @@ curl -s "${API_URL}/customer?query=exact&isActive=true&limit=50" \
 
 | 參數 | 說明 | 適用模式 |
 |------|------|----------|
-| `query` | 過濾模式：`all` / `exact` / `fuzzy`（預設 `all`） | 全部 |
+| `query` | **必填**，過濾模式：`all` / `exact` / `fuzzy`（無預設，省略回 400） | 全部 |
 | `name` | 客戶名稱 | exact / fuzzy |
 | `number` | 客戶編號 | exact / fuzzy |
 | `address` | 客戶地址 | exact / fuzzy |
 | `isActive` | 是否啟用（`true` / `false`） | exact / fuzzy |
-| `createTimeFrom` | 建立時間起（含） | exact / fuzzy |
-| `createTimeTo` | 建立時間迄（含） | exact / fuzzy |
-| `offset` | 分頁位移 | 全部 |
-| `limit` | 每頁筆數 | 全部 |
-| `orderBy` | 排序欄位 | 全部 |
-| `order` | 排序方向（`asc` / `desc`） | 全部 |
+| `createTimeFrom` / `createTimeTo` | 建立時間起迄（含），RFC3339 | exact / fuzzy |
+| `updateTimeFrom` / `updateTimeTo` | 更新時間起迄（含），RFC3339 | exact / fuzzy |
+| `offset` | 分頁位移（預設 0） | 全部 |
+| `limit` | 每頁筆數（預設 20） | 全部 |
+| `orderBy` | 排序欄位，僅限 `name` / `number` / `createTime` / `updateTime`（預設 `createTime`，其他值回 400） | 全部 |
+| `order` | 排序方向 `asc` / `desc`（預設 `desc`） | 全部 |
 
-> `query=all` 時只送分頁 / 排序參數，其餘過濾欄位會被忽略。
+> - `query=all` 只能帶分頁 / 排序參數；帶任何過濾或區間參數會回 400。
+> - `query=exact` / `fuzzy` 必須至少帶一個過濾條件，否則回 400。
+> - 時間區間參數須為 RFC3339 格式（如 `2026-01-01T00:00:00Z`），否則回 400。
 
-**回傳**: `{ "data": [...], "total": N }`。每筆客戶含 `uuid`、`name`、`number`、`address`、`isActive` 等欄位。
+**回傳**: `{ "data": [...], "offset": N, "limit": N, "total": N }`。每筆客戶含 `uuid`、`name`、`number`、`address`、`isActive` 等欄位。
+
+### Get Customer
+
+取得單一客戶。**只接受 UUID**（不是客戶編號 `number`）。
+
+```bash
+CUSTOMER_UUID="<customer uuid>"
+curl -s "${API_URL}/customer/${CUSTOMER_UUID}" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+**回傳**: 單筆客戶完整物件。
 
 ---
 
@@ -152,9 +188,12 @@ curl -s "${API_URL}/customer?query=exact&isActive=true&limit=50" \
 |-----------|--------|----------|
 | List sales orders | GET | `/order?query=all\|exact\|fuzzy` |
 | Get sales order | GET | `/order/{uuid}` |
+| Order status enum | GET | `/order/status` |
+| Order item status enum | GET | `/item/status` |
 | List customers | GET | `/customer?query=all\|exact\|fuzzy` |
+| Get customer | GET | `/customer/{uuid}` |
 
-> 全部為唯讀查詢端點。訂單明細須以 UUID 取得，非業務編號。
+> 全部為唯讀查詢端點。訂單 / 客戶明細須以 UUID 取得，非業務編號。
 
 ---
 
@@ -164,5 +203,5 @@ curl -s "${API_URL}/customer?query=exact&isActive=true&limit=50" \
 |-----------|-------|----------|
 | 401 | Token expired/invalid | Refresh token or re-login |
 | 403 | Permission denied | Check user permissions |
-| 404 | Resource not found | Verify UUID (order/{uuid} 只接受 UUID，非業務編號) |
-| 422 | Validation error | Check query mode and filter parameters |
+| 404 | Resource not found | Verify UUID (order/{uuid}、customer/{uuid} 只接受 UUID，非業務編號) |
+| 400 | Validation error | 檢查：query 模式（必填 all/exact/fuzzy）、query=all 不可帶過濾、exact/fuzzy 至少一個過濾條件、時間為 RFC3339、orderBy 白名單、limit/offset 為合法整數 |

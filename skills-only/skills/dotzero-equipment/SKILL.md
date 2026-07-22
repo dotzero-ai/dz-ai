@@ -43,11 +43,11 @@ TOKEN=$(get_valid_token)
 ### List Alarms
 
 ```bash
-curl -s "${API_URL}/alarms?limit=20" \
+curl -s "${API_URL}/alarms?uuid=${DEVICE_UUID}&start=2026-02-01T00:00:00Z&end=2026-02-08T23:59:59Z" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-**Query Parameters**: `deviceUUID`, `alarmCode`, `startTime`, `endTime`, `limit`, `start`
+**Query Parameters** (all required, RFC3339 for times): `uuid`, `start`, `end`
 
 ---
 
@@ -56,54 +56,64 @@ curl -s "${API_URL}/alarms?limit=20" \
 ### List Idle Records
 
 ```bash
-curl -s "${API_URL}/idles?limit=20" \
+curl -s "${API_URL}/idles?uuid=${DEVICE_UUID}&start=2026-02-01T00:00:00Z&end=2026-02-08T23:59:59Z" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-**Query Parameters**: `deviceUUID`, `startTime`, `endTime`, `limit`, `start`
+**Query Parameters** (all required, RFC3339 for times): `uuid`, `start`, `end`
 
 ---
 
 ## Machine Status Operations
 
-### Get Status History
+### Get Status History (point-in-time)
+
+Returns the single latest status record at or before the given `time`.
 
 ```bash
-curl -s "${API_URL}/machineStatus/history?deviceUUID=${DEVICE_UUID}&limit=20" \
+curl -s "${API_URL}/machineStatus/history?uuid=${DEVICE_UUID}&time=2026-02-08T12:00:00Z" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
+
+**Query Parameters** (both required): `uuid`, `time` (RFC3339). Returns a single object, not a list.
 
 ### Get Part Counts
 
 ```bash
-curl -s "${API_URL}/machineStatus/partCounts?deviceUUID=${DEVICE_UUID}" \
+curl -s "${API_URL}/machineStatus/partCounts?uuid=${DEVICE_UUID}&start=2026-02-01T00:00:00Z&end=2026-02-08T23:59:59Z" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-**Query Parameters**: `deviceUUID` (required), `startTime`, `endTime`
+**Query Parameters** (all required, RFC3339 for times): `uuid`, `start`, `end`
 
 ### Get Part Counts Batch
+
+Body is a bare JSON array; one `{uuid, start, end}` object per device.
 
 ```bash
 curl -s -X POST "${API_URL}/machineStatus/partCounts/batch" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"deviceUUIDs": ["dev-1", "dev-2", "dev-3"]}'
+  -d '[{"uuid":"dev-1","start":"2026-02-01T00:00:00Z","end":"2026-02-08T23:59:59Z"},{"uuid":"dev-2","start":"2026-02-01T00:00:00Z","end":"2026-02-08T23:59:59Z"}]'
 ```
 
 ### Get Real-Time Status
 
 ```bash
-curl -s "${API_URL}/machineStatus/realTime?deviceUUID=${DEVICE_UUID}" \
+curl -s "${API_URL}/machineStatus/realTime?uuid=${DEVICE_UUID}" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
+
+**Query Parameters**: `uuid` (or `name`) — identifies the device. Omitting both returns every device in the tenant.
 
 ### Get Real-Time Batch
 
 ```bash
-curl -s "${API_URL}/machineStatus/realTime/batch?deviceUUIDs=${UUID1},${UUID2}" \
+curl -s "${API_URL}/machineStatus/realTime/batch?uuids=${UUID1},${UUID2}" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
+
+**Query Parameters** (required): `uuids` — comma-separated device UUIDs.
 
 ---
 
@@ -112,11 +122,11 @@ curl -s "${API_URL}/machineStatus/realTime/batch?deviceUUIDs=${UUID1},${UUID2}" 
 ### List Off Time
 
 ```bash
-curl -s "${API_URL}/offTime?limit=20" \
+curl -s "${API_URL}/offTime?uuid=${DEVICE_UUID}&start=2026-02-01T00:00:00Z&end=2026-02-08T23:59:59Z" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-**Query Parameters**: `deviceUUID`, `startTime`, `endTime`, `limit`, `start`
+**Query Parameters** (all required, RFC3339 for times): `uuid`, `start`, `end`
 
 ---
 

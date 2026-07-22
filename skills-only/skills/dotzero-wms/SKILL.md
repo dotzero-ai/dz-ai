@@ -47,7 +47,9 @@ TOKEN=$(get_valid_token)
 
 ## Stock Query (庫存查詢)
 
-依工單或序號查詢產品庫存明細。**POST body 查詢**：`work_order_id_list` 或 `serial_number_list` 至少擇一（皆為陣列），否則無法查詢。
+依工單或序號查詢產品庫存明細。**POST body 查詢**：請帶 `work_order_id_list` 或 `serial_number_list` 至少一個（皆為陣列）。
+
+> ⚠️ 後端不擋空查詢：兩個 list 皆空（或送 `{}`）仍回 200，且會**傾印該 tenant 全部庫存**（可能極大）。**勿送空 body**；只有 body 完全缺漏或非法 JSON 才回 400。
 
 ### By Work Order (依工單查庫存)
 
@@ -125,9 +127,9 @@ curl -s "${API_URL}/v1/wms-backend/minimalStockLevelProductCount" \
 
 ## Picking Progress (工單揀料完成進度)
 
-查詢指定計畫日期區間的工單揀料完成率報表。日期格式為 **YYYY-MM-DD**（非 RFC3339）。
+查詢工單揀料完成率報表。日期格式為 **YYYY-MM-DD**（非 RFC3339）。
 
-**注意**：`plannedDateStart` 與 `plannedDateEnd` 區間**必須提供**，否則後端回 400。若省略，建議預設帶入本週一至週日。
+**必填規則**：`plannedDateStart`/`plannedDateEnd`（預計發料日）與 `pickedDateStart`/`pickedDateEnd`（已發料日）**兩組日期區間至少擇一組（成對提供）**；兩組皆缺才回 400。單獨提供 picked 區間也合法，可用來過濾「實際發料日」落在區間內的完成記錄。若無特定需求，建議帶 planned 區間（如本週一至週日）。
 
 ```bash
 # 明確指定區間
@@ -151,10 +153,77 @@ curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingCompletionRate" \
 
 | Param | Type | Required | 說明 |
 |-------|------|----------|------|
-| `plannedDateStart` | string (YYYY-MM-DD) | 是 | 計畫日期起 |
-| `plannedDateEnd` | string (YYYY-MM-DD) | 是 | 計畫日期迄 |
+| `plannedDateStart` | string (YYYY-MM-DD) | 兩組擇一（成對） | 預計發料日起，用於篩選發料計畫 |
+| `plannedDateEnd` | string (YYYY-MM-DD) | 兩組擇一（成對） | 預計發料日迄 |
+| `pickedDateStart` | string (YYYY-MM-DD) | 兩組擇一（成對） | 已發料日起，用於過濾實際發料日 |
+| `pickedDateEnd` | string (YYYY-MM-DD) | 兩組擇一（成對） | 已發料日迄 |
 
 **回傳**：後端揀料完成率報表原樣透傳（JSON 物件）。
+
+---
+
+## Storage History (倉儲異動歷史)
+
+查詢庫存異動記錄（入庫/出庫/領料等），支援多條件過濾與分頁。**query 參數為 camelCase**（與其他 endpoint 的 snake_case body 不同）。
+
+```bash
+curl -s -G "${API_URL}/v1/wms-backend/queryProductStorageHistory" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  --data-urlencode "workOrderID=WO-2026-0001" \
+  --data-urlencode "updateTimeStart=2026-07-01" \
+  --data-urlencode "updateTimeEnd=2026-07-21" \
+  --data-urlencode "limit=50" | jq '{total, data: [.data[] | {work_order_id, serial_number, qty, action, update_time}]}'
+```
+
+**參數**（query，皆選填）：
+
+| Param | 說明 |
+|-------|------|
+| `page` | 設 `all` 時回傳全部（無分頁、忽略過濾） |
+| `start` | 分頁起始 index（預設 0） |
+| `limit` | 每頁筆數（預設 10） |
+| `workOrderID` | 工單編號 |
+| `productNumber` / `productName` | 產品編號 / 名稱 |
+| `serialNumber` | 產品序號 |
+| `warehouseName` / `warehouseUUID` | 倉庫名稱 / UUID |
+| `warehouseStorageName` / `warehouseStorageUUID` | 儲位名稱 / UUID |
+| `workerName` / `workerID` | 操作人員名稱 / ID |
+| `action` | 異動類型 |
+| `updateTimeStart` / `updateTimeEnd` | 異動時間區間 |
+| `memo` | 備註 |
+| `expirationDateStartTime` / `expirationDateEndTime` | 效期區間 |
+
+**回傳**：`{ total, startingIndex, limit, data }`，`data` 為異動記錄陣列（含 `wooh` 工序歷史詳情，無關聯時為 `null`）。
+
+> 批次版：`POST /v1/wms-backend/groupQueryProductStorageHistory`，body `{"work_order_id_list": [...], "create_time_start": "...", "create_time_end": "..."}`。
+
+---
+
+## Work Order Picking History (工單領料記錄)
+
+依工單查領料記錄，雙視角回傳：IO 操作流水 + 依工序的 BOM 領料狀態。
+
+```bash
+curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingHistory" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  --data-urlencode "workOrderID=WO-2026-0001" | jq '{
+    io_count: (.io_records | length),
+    operations: [.operations[] | {op_order, operation_name, is_completed}]
+  }'
+```
+
+**參數**（query）：
+
+| Param | Type | Required | 說明 |
+|-------|------|----------|------|
+| `workOrderID` | string | 是 | 工單單號（缺少回 400） |
+
+**回傳**：
+
+| Field | 說明 |
+|-------|------|
+| `io_records` | IO 領料流水陣列，每筆含 `create_time`、`product_uuid`/`product_number`/`product_name`、`qty`、`w_name`（倉庫）、`ws_name`（儲位）、`serial_number`、`worker_name`、`memo` |
+| `operations` | 依工序陣列，每筆含 `op_order`、`operation_uuid`/`operation_code`/`operation_name`、`is_completed`、`bom_list`（每筆含 `product_uuid`/`product_number`/`product_name`、`required_qty`、`picked_qty`、`is_completed`） |
 
 ---
 
@@ -165,6 +234,9 @@ curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingCompletionRate" \
 | Stock query (庫存查詢) | POST | `/v1/wms-backend/queryProductStorage` |
 | Low stock list (低庫存) | GET | `/v1/wms-backend/minimalStockLevelProductCount` |
 | Picking progress (揀料進度) | GET | `/v1/wms-backend/workOrderPickingCompletionRate` |
+| Storage history (異動歷史) | GET | `/v1/wms-backend/queryProductStorageHistory` |
+| Storage history batch (批次異動歷史) | POST | `/v1/wms-backend/groupQueryProductStorageHistory` |
+| Picking history (領料記錄) | GET | `/v1/wms-backend/workOrderPickingHistory` |
 
 ---
 
@@ -172,7 +244,7 @@ curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingCompletionRate" \
 
 | HTTP Code | Cause | Solution |
 |-----------|-------|----------|
-| 400 | 缺少必要參數（揀料進度未帶日期區間、庫存查詢 body 為空） | 補齊 `plannedDateStart`/`plannedDateEnd` 或 `work_order_id_list`/`serial_number_list` |
+| 400 | 缺少必要參數（揀料進度 planned/picked 兩組日期區間皆缺、領料記錄未帶 `workOrderID`、庫存查詢 body 缺漏或非法 JSON） | 補齊成對日期區間（planned 或 picked 擇一組）或必要參數。注意：庫存查詢送 `{}` 不會 400，而是回傳全 tenant 庫存 |
 | 401 | Token expired/invalid | Refresh token or re-login |
 | 403 | Permission denied | Check user permissions |
 | 404 | Resource not found | Verify work order id / serial number |

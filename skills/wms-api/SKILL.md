@@ -9,9 +9,14 @@ This skill provides 3 read tools (+ auth):
 - **auth_login / auth_status**: authenticate & check status
 - **wms_stock_query**: query product storage / stock levels
 - **wms_low_stock_list**: products below minimal stock level
-- **wms_picking_progress**: work-order picking completion rate (date range)
+- **wms_picking_progress**: work-order picking completion rate (planned-date range)
 
 All tools are **read-only** (query/analysis; no writes).
+
+Notes on tool coverage:
+
+- `wms_picking_progress` requires `planned_date_start`/`planned_date_end` (YYYY-MM-DD). The underlying API additionally accepts a `pickedDateStart`/`pickedDateEnd` (actual issue date) range — either pair suffices — but the MCP tool currently only exposes the planned pair. To filter by actual picked date, call the HTTP endpoint directly (see the `dotzero-wms` skill).
+- Additional read-only WMS endpoints not yet wrapped as MCP tools (storage change history `queryProductStorageHistory`, batch history `groupQueryProductStorageHistory`, per-work-order picking history `workOrderPickingHistory`) are documented in the `dotzero-wms` skill.
 
 ## Prerequisites
 

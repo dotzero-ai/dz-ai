@@ -17,10 +17,10 @@ This skill provides 12 tools for interacting with the Equipment API:
 
 ### Authentication
 
-Equipment API is publicly accessible but authentication is supported for tenant-specific data.
+All tools require authentication. Call `auth_login` first — every data request without a valid token returns 401. Recommended: pass only `tenant_id` to open browser login (credentials never pass through the AI).
 
 ```
-auth_login(email: "user@example.com", password: "password", tenant_id: "tenant-id")
+auth_login(tenant_id: "tenant-id")
 ```
 
 ## Environment Variables
@@ -35,12 +35,14 @@ auth_login(email: "user@example.com", password: "password", tenant_id: "tenant-i
 ### Authentication Tools
 
 #### auth_login
-Authenticate with email, password, and tenant_id.
+Authenticate to obtain a JWT token.
 
 **Parameters:**
-- `email` (string, required): User email address
-- `password` (string, required): User password
 - `tenant_id` (string, required): Tenant ID
+- `email` (string, optional): User email — omit to open browser login (recommended)
+- `password` (string, optional): User password — omit to open browser login
+
+Recommended usage: `auth_login(tenant_id: "your-tenant-id")` opens a browser for the user to enter credentials.
 
 #### auth_status
 Check if the client is authenticated.
@@ -55,12 +57,10 @@ Check if the client is authenticated.
 List equipment alarm records.
 
 **Parameters:**
-- `device_uuid` (string, optional): Filter by device UUID
-- `alarm_code` (string, optional): Filter by alarm code
-- `start_time` (string, optional): Start time filter (ISO 8601)
-- `end_time` (string, optional): End time filter (ISO 8601)
+- `device_uuid` (string, required): Device UUID
+- `start_time` (string, required): Start time (RFC3339)
+- `end_time` (string, required): End time (RFC3339)
 - `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -71,11 +71,10 @@ List equipment alarm records.
 List equipment idle time records.
 
 **Parameters:**
-- `device_uuid` (string, optional): Filter by device UUID
-- `start_time` (string, optional): Start time filter (ISO 8601)
-- `end_time` (string, optional): End time filter (ISO 8601)
+- `device_uuid` (string, required): Device UUID
+- `start_time` (string, required): Start time (RFC3339)
+- `end_time` (string, required): End time (RFC3339)
 - `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -83,46 +82,43 @@ List equipment idle time records.
 ### Machine Status Tools
 
 #### equip_machine_status_history
-Get machine status history.
+Get the machine status at a specific point in time (returns a single record, the latest at or before `time`).
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, optional): Start time (ISO 8601)
-- `end_time` (string, optional): End time (ISO 8601)
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `time` (string, required): Point in time (RFC3339) — returns latest status at or before this
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-#### equip_part_counts
+#### equip_machine_status_part_counts
 Get part count data for a device.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, optional): Start time (ISO 8601)
-- `end_time` (string, optional): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339)
+- `end_time` (string, required): End time (RFC3339)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-#### equip_part_counts_batch
+#### equip_machine_status_part_counts_batch
 Get part counts for multiple devices in one call.
 
 **Parameters:**
 - `device_uuids` (array, required): Array of device UUIDs
-- `start_time` (string, optional): Start time (ISO 8601)
-- `end_time` (string, optional): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339), applied to all devices
+- `end_time` (string, required): End time (RFC3339), applied to all devices
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-#### equip_realtime
+#### equip_machine_status_realtime
 Get real-time machine status for a single device.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-#### equip_realtime_batch
+#### equip_machine_status_realtime_batch
 Get real-time machine status for multiple devices.
 
 **Parameters:**
-- `device_uuids` (array, required): Array of device UUIDs
+- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. "dev-1,dev-2,dev-3")
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -133,11 +129,10 @@ Get real-time machine status for multiple devices.
 List equipment off-time records.
 
 **Parameters:**
-- `device_uuid` (string, optional): Filter by device UUID
-- `start_time` (string, optional): Start time (ISO 8601)
-- `end_time` (string, optional): End time (ISO 8601)
+- `device_uuid` (string, required): Device UUID
+- `start_time` (string, required): Start time (RFC3339)
+- `end_time` (string, required): End time (RFC3339)
 - `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -172,20 +167,20 @@ equip_state_counts_factory(factory_uuid: "factory-uuid")
 equip_state_counts_line(line_uuid: "line-uuid")
 
 # 3. Check real-time status of machines
-equip_realtime_batch(device_uuids: ["device-1", "device-2", "device-3"])
+equip_machine_status_realtime_batch(device_uuids: "device-1,device-2,device-3")
 ```
 
 ### Workflow: Investigate alarms
 
 ```
-# 1. List recent alarms
-equip_alarm_list(start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-08T23:59:59Z")
+# 1. List recent alarms (device_uuid, start_time, end_time all required)
+equip_alarm_list(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-08T23:59:59Z")
 
 # 2. Check idle time for a problematic device
-equip_idle_list(device_uuid: "device-uuid")
+equip_idle_list(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-08T23:59:59Z")
 
 # 3. Get part count data for the period
-equip_part_counts(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-08T23:59:59Z")
+equip_machine_status_part_counts(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-08T23:59:59Z")
 ```
 
 ## Error Handling
@@ -199,7 +194,7 @@ equip_part_counts(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z"
 ## MCP Server
 
 - **Package**: `@dotzero.ai/equipment-mcp`
-- **Tools**: 12 (all public, no auth gating)
+- **Tools**: 12 (all require authentication; call `auth_login` first)
 
 ## Repository
 

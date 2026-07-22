@@ -45,6 +45,45 @@ TOKEN=$(get_valid_token)
 
 ---
 
+## Dashboard (V1)
+
+### Dashboard Counters（供應鏈狀態總覽）
+
+一次取得各階段待辦計數，是做供應鏈狀態總覽的最佳單一入口。無 permission gate — 每個角色看到自己 scope 的計數（供應商看自己，採購方看全租戶）。
+
+```bash
+curl -s "${API_URL}/v1/dashboard/counters" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+**參數說明**: 無 query 參數。
+
+**回傳說明**: 單一 JSON 物件，恰好 4 個計數欄位：
+
+| 欄位 | 說明 |
+|------|------|
+| `pending_quote` | 待報價（採購單品項尚無報價單價） |
+| `pending_po_confirmation` | 已報價、待確認的採購單品項 |
+| `deliverable` | 已確認、待交貨的採購單品項（剩餘數量 > 0） |
+| `overdue` | 已逾交期且仍有剩餘數量的品項 |
+
+---
+
+## Identity (V1)
+
+### Get Me（身分/角色）
+
+查詢目前 token 的身分脈絡。無 permission gate。
+
+```bash
+curl -s "${API_URL}/v1/me" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+**回傳說明**: 單一 JSON 物件：`user_email`、`tenant_id`、`supplier_id`（採購方為 `null`）、`role`、`display_name`。
+
+---
+
 ## Delivery Operations (V1)
 
 ### List Deliverable POs（待交貨 / 剩餘可交）
@@ -134,7 +173,7 @@ curl -s "${API_URL}/v1/qa/inspectable" \
 curl -s "${API_URL}/v1/performance?period=2026-06" \
   -H "Authorization: Bearer ${TOKEN}"
 
-# 不帶 period 則回傳預設期間
+# 不帶 period 則回傳當月（Asia/Taipei 時區）
 curl -s "${API_URL}/v1/performance" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
@@ -143,9 +182,9 @@ curl -s "${API_URL}/v1/performance" \
 
 | 參數 | 必填 | 格式 | 說明 |
 |------|------|------|------|
-| `period` | 選填 | `YYYY-MM` | 績效統計月份，例如 `2026-06`。省略則用後端預設期間。 |
+| `period` | 選填 | `YYYY-MM` | 績效統計月份，例如 `2026-06`。省略則為當月（Asia/Taipei 時區）。格式錯誤回 `400`。 |
 
-**回傳說明**: 回傳裸 JSON 陣列，每列為一家供應商。指標欄位可能是純數值，或包含 `effective` 值的物件（取 `effective` 為有效值）。常見欄位：
+**回傳說明**: 回傳裸 JSON 陣列，每列為一家供應商。三個指標欄位（`defect_rate`、`on_time_rate`、`cooperation_score`）**一律為物件** `{computed, override, effective, is_manual, override_uuid, remark}`，從不會是純數值 — 取 `.effective` 為顯示值，`.is_manual` 表示人工覆寫。常見欄位：
 
 | 欄位 | 說明 |
 |------|------|
@@ -153,11 +192,11 @@ curl -s "${API_URL}/v1/performance" \
 | `supplier_code` | 供應商代碼 |
 | `supplier_name` | 供應商名稱 |
 | `period` | 統計期間 |
-| `defect_rate` | 不良率 |
-| `on_time_rate` | 準時交貨率 |
-| `cooperation_score` | 配合度分數 |
+| `defect_rate` | 不良率（物件，取 `.effective`） |
+| `on_time_rate` | 準時交貨率（物件，取 `.effective`） |
+| `cooperation_score` | 配合度分數（物件，取 `.effective`） |
 
-**jq 範例** — 取供應商名稱與有效指標值（相容純值 / 物件兩種格式）：
+**jq 範例** — 取供應商名稱與有效指標值：
 
 ```bash
 curl -s "${API_URL}/v1/performance?period=2026-06" \
@@ -165,8 +204,8 @@ curl -s "${API_URL}/v1/performance?period=2026-06" \
   | jq '.[] | {
       supplier_name,
       period,
-      defect_rate:  (.defect_rate.effective  // .defect_rate),
-      on_time_rate: (.on_time_rate.effective // .on_time_rate)
+      defect_rate:  .defect_rate.effective,
+      on_time_rate: .on_time_rate.effective
     }'
 ```
 
@@ -214,14 +253,84 @@ curl -s "${API_URL}/v1/invoices/billable" \
 
 ---
 
+## Other Read Endpoints (V1)
+
+以下清單端點皆回傳裸 JSON 陣列。**注意尾斜線**：這些路由註冊為 group `GET("/")`，gin 會把 `/v1/quotes` 301 轉址到 `/v1/quotes/` — curl 不加 `-L` 會拿不到 body，請直接使用含尾斜線的路徑。
+
+### List PO Items / Quotes（採購單品項 / 報價）
+
+```bash
+curl -s "${API_URL}/v1/quotes/" -H "Authorization: Bearer ${TOKEN}"
+```
+
+無 query 參數。需 `scm.quote.read` 權限。
+
+### List Deliveries（交貨紀錄）
+
+```bash
+curl -s "${API_URL}/v1/deliveries/" -H "Authorization: Bearer ${TOKEN}"
+```
+
+無 query 參數。需 `scm.delivery.read` 權限。
+
+### List QA Inspections（品檢結果）
+
+```bash
+curl -s "${API_URL}/v1/qa/" -H "Authorization: Bearer ${TOKEN}"
+```
+
+無 query 參數。需 `scm.qa.read` 權限。
+
+### List Invoices（發票清單）
+
+```bash
+curl -s "${API_URL}/v1/invoices/?status=pending" -H "Authorization: Bearer ${TOKEN}"
+```
+
+| 參數 | 必填 | 說明 |
+|------|------|------|
+| `status` | 選填 | `pending`（待付款）/ `paid`（已付款）/ `voided`（已作廢）。省略則回所有未作廢發票。 |
+
+每筆含 `attachment_count`（附件數）。需 `scm.billing.read` 權限。
+
+### List Suppliers（供應商清單）
+
+```bash
+curl -s "${API_URL}/v1/suppliers/?include_inactive=false" -H "Authorization: Bearer ${TOKEN}"
+```
+
+| 參數 | 必填 | 說明 |
+|------|------|------|
+| `include_inactive` | 選填 | **預設含停用供應商**；僅明傳 `false` 才排除停用。 |
+
+需 `scm.supplier.read` 權限。
+
+### List Announcements（公告）
+
+```bash
+curl -s "${API_URL}/v1/announcements/" -H "Authorization: Bearer ${TOKEN}"
+```
+
+無 query 參數。需 `scm.announcement.read` 權限（供應商僅見發布期間內的公告）。
+
+---
+
 ## Quick Reference
 
-| Operation | Method | Endpoint | Query |
-|-----------|--------|----------|-------|
-| 待交貨清單 | GET | `/v1/deliveries/deliverable` | — |
-| 待品檢清單 | GET | `/v1/qa/inspectable` | — |
-| 供應商績效 | GET | `/v1/performance` | `period=YYYY-MM`（選填） |
-| 可請款品項 | GET | `/v1/invoices/billable` | — |
+| Operation | Method | Endpoint | Query | Permission |
+|-----------|--------|----------|-------|------------|
+| 狀態總覽計數 | GET | `/v1/dashboard/counters` | — | 無（依角色 scope） |
+| 身分/角色 | GET | `/v1/me` | — | 無 |
+| 待交貨清單 | GET | `/v1/deliveries/deliverable` | — | `scm.delivery.read` |
+| 待品檢清單 | GET | `/v1/qa/inspectable` | — | `scm.qa.read` |
+| 供應商績效 | GET | `/v1/performance` | `period=YYYY-MM`（選填，預設當月 Asia/Taipei） | `scm.performance.read` |
+| 可請款品項 | GET | `/v1/invoices/billable` | — | `scm.billing.read` |
+| 採購品項/報價 | GET | `/v1/quotes/` | — | `scm.quote.read` |
+| 交貨紀錄 | GET | `/v1/deliveries/` | — | `scm.delivery.read` |
+| 品檢結果 | GET | `/v1/qa/` | — | `scm.qa.read` |
+| 發票清單 | GET | `/v1/invoices/` | `status=pending|paid|voided`（選填） | `scm.billing.read` |
+| 供應商清單 | GET | `/v1/suppliers/` | `include_inactive`（選填，預設含停用） | `scm.supplier.read` |
+| 公告 | GET | `/v1/announcements/` | — | `scm.announcement.read` |
 
 ---
 
@@ -229,7 +338,7 @@ curl -s "${API_URL}/v1/invoices/billable" \
 
 | HTTP Code | Cause | Solution |
 |-----------|-------|----------|
+| 400 | Bad Request — 參數/格式驗證失敗（如 `period` 非 `YYYY-MM`） | Check query parameters |
 | 401 | Token expired/invalid | Refresh token or re-login |
-| 403 | Permission denied（待品檢需 `scm.qa.read`） | Check user permissions |
-| 404 | Resource not found | Verify endpoint path |
-| 422 | Validation error | Check query parameters（如 `period` 格式 `YYYY-MM`） |
+| 403 | Permission denied — 缺該端點對應的 permission key（見 Quick Reference 的 Permission 欄） | Check user permissions |
+| 404 | Resource not found | Verify endpoint path（清單端點需含尾斜線） |

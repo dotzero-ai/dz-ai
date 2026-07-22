@@ -301,14 +301,16 @@ fi
 
 ## Error Handling
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `Invalid email or password` | Wrong credentials | Verify email and password |
-| `Tenant not found` | Invalid tenant_id | Ask user for correct tenant_id |
-| `Bad request` | Missing parameters | Ensure all required fields are provided |
-| `Too many login attempts` | Rate limited | Wait before retrying |
-| `401 Unauthorized` | Token expired | Auto-refresh or re-login |
-| `Refresh token expired` | Refresh token also expired | Must re-login |
+Errors are returned as JSON `{"errorType": "...", "errorMsg": "..."}`. Note: login failures return **HTTP 500** (not 400/401) — match on `errorType`, not on HTTP status or message text.
+
+| HTTP | errorType | errorMsg (actual) | Solution |
+|------|-----------|-------------------|----------|
+| 500 | `INVALID_AUTH_INFO` | `Please check tenantId, email and password.` | Verify email and password |
+| 401 | `INVALID_AUTH_INFO` | `No such tenant.` | Ask user for correct tenant_id |
+| 500 | `INVALID_DATA` | `Email / Password is not given.` | Ensure all required fields are provided |
+| 500 | `TOO_MANY_ATTEMPTS_TRY_LATER` | `Attemps too many times, please try later.` | Wait before retrying |
+| 500 | `ERROR_NOT_EXPECTED` | (varies) | Unexpected backend error — retry or report |
+| 401 | (no body) | Token expired/invalid on protected endpoints | Auto-refresh or re-login |
 
 ## API Reference
 
@@ -330,7 +332,8 @@ fi
   "email": "user@example.com",
   "name": "User Name",
   "token": "eyJhbG...",
-  "refresh_token": "eyJhbG..."
+  "refresh_token": "eyJhbG...",
+  "tenant_id": "my-company"
 }
 ```
 
@@ -351,7 +354,28 @@ fi
 "eyJhbG..."
 ```
 
-Note: The refresh_token is not rotated. Keep using the original refresh_token from login.
+Notes:
+- **Rotation (cloud)**: In the cloud environment the refresh_token is not rotated — keep using the original refresh_token from login. (Edge/keycloak deployments do rotate, but the default response discards the new refresh_token; pass `?new_refresh_token=true` — edge only — to get JSON `{"token", "refresh_token"}` instead of a plain string. Cloud rejects `new_refresh_token=true` with `INVALID_DATA`.)
+- `grant_type=password` is also supported (body: `email` + `password`), returning a plain token string — normally prefer `/v2/auth/login` which also returns a refresh_token.
+
+### GET /v2/auth/userInfo
+
+The most direct way to verify a token is still valid and confirm the current identity.
+
+**URL**: `{USER_API_URL}/v2/auth/userInfo`
+
+**Headers**: `Authorization: Bearer {token}` (tenant is derived from the token — no query param)
+
+**Response** (200):
+```json
+{
+  "email": "user@example.com",
+  "name": "User Name",
+  "tenantId": "my-company"
+}
+```
+
+401 (empty body) means the token is invalid/expired — refresh or re-login.
 
 ## Helper Scripts
 

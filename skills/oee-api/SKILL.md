@@ -4,15 +4,14 @@ MCP skill for Overall Equipment Effectiveness (OEE) — availability, quality, p
 
 ## Overview
 
-This skill provides 21 tools for interacting with the OEE API:
+This skill provides 23 tools for interacting with the OEE API:
 
 - **Authentication** (2): Login and check auth status
-- **Availability** (4): Device, multi-device, line, and factory availability
-- **Quality** (4): Device, multi-device, line, and factory quality rates
-- **Performance** (5): Device, multi-device, line, factory performance, and device range analysis
+- **Availability** (5): Device, multi-device, line, factory, and device daily-trend availability
+- **Quality** (5): Device, multi-device, line, factory, and device daily-trend quality rates
+- **Performance** (5): Device, multi-device, line, factory performance, and device daily-trend analysis
 - **OEE** (4): Combined OEE at device, multi-device, line, and factory levels
 - **Status** (1): Current device OEE status
-- **Alarm History** (1): OEE-related alarm history
 - **Alarm History** (1): OEE-related alarm history
 
 ## Prerequisites
@@ -76,7 +75,7 @@ Get availability for a single device.
 Get availability for multiple devices.
 
 **Parameters:**
-- `device_uuids` (array, required): Array of device UUIDs
+- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
 - `start_time` (string, required): Start time (ISO 8601)
 - `end_time` (string, required): End time (ISO 8601)
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -99,6 +98,15 @@ Get availability for a factory.
 - `end_time` (string, required): End time (ISO 8601)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
+#### oee_availability_device_range
+Get availability for a device broken down by day over a time range (daily trend).
+
+**Parameters:**
+- `device_uuid` (string, required): Device UUID
+- `start_time` (string, required): Start time (ISO 8601)
+- `end_time` (string, required): End time (ISO 8601)
+- `response_format` ('markdown'|'json', default: 'markdown')
+
 ---
 
 ### Quality Tools
@@ -116,7 +124,7 @@ Get quality rate for a single device.
 Get quality rate for multiple devices.
 
 **Parameters:**
-- `device_uuids` (array, required): Array of device UUIDs
+- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
 - `start_time` (string, required): Start time (ISO 8601)
 - `end_time` (string, required): End time (ISO 8601)
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -139,6 +147,15 @@ Get quality rate for a factory.
 - `end_time` (string, required): End time (ISO 8601)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
+#### oee_quality_device_range
+Get quality rate for a device broken down by day over a time range (daily trend).
+
+**Parameters:**
+- `device_uuid` (string, required): Device UUID
+- `start_time` (string, required): Start time (ISO 8601)
+- `end_time` (string, required): End time (ISO 8601)
+- `response_format` ('markdown'|'json', default: 'markdown')
+
 ---
 
 ### Performance Tools
@@ -156,7 +173,7 @@ Get performance for a single device.
 Get performance for multiple devices.
 
 **Parameters:**
-- `device_uuids` (array, required): Array of device UUIDs
+- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
 - `start_time` (string, required): Start time (ISO 8601)
 - `end_time` (string, required): End time (ISO 8601)
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -205,7 +222,7 @@ Get combined OEE (Availability x Quality x Performance) for a single device.
 Get combined OEE for multiple devices.
 
 **Parameters:**
-- `device_uuids` (array, required): Array of device UUIDs
+- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
 - `start_time` (string, required): Start time (ISO 8601)
 - `end_time` (string, required): End time (ISO 8601)
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -246,13 +263,12 @@ Get current OEE status for a device.
 #### oee_alarm_history
 Get OEE-related alarm history.
 
+Returns the full alarm array for the device over the time range (no pagination, no code filtering).
+
 **Parameters:**
-- `device_uuid` (string, optional): Filter by device UUID
-- `start_time` (string, optional): Start time (ISO 8601)
-- `end_time` (string, optional): End time (ISO 8601)
-- `alarm_code` (string, optional): Filter by alarm code
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `device_uuid` (string, required): Device UUID
+- `start_time` (string, required): Start time (ISO 8601)
+- `end_time` (string, required): End time (ISO 8601)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -269,7 +285,7 @@ oee_factory(factory_uuid: "factory-uuid", start_time: "2026-02-01T00:00:00Z", en
 oee_line(line_uuid: "line-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
 
 # 3. Identify low-performing devices
-oee_devices(device_uuids: ["dev-1", "dev-2", "dev-3"], start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_devices(device_uuids: "dev-1,dev-2,dev-3", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
 ```
 
 ### Workflow: Analyze availability issues
@@ -287,16 +303,18 @@ oee_performance_device_range(device_uuid: "device-uuid", start_time: "2026-02-01
 
 ## Error Handling
 
-| Error | Solution |
-|-------|----------|
-| 401 Unauthorized | Call `auth_login` with tenant_id |
-| 404 Not Found | Verify the UUID |
-| 422 Validation | Check time range parameters |
+Except for auth, this API returns **500** with a plain-text message for almost all errors (bad UUID, missing/malformed time, missing params). Read the response body to determine the cause — do not rely on 404/422 status codes.
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| 401 Unauthorized | Token expired/invalid | Call `auth_login` with tenant_id |
+| 500 `Cannot find this device.` | Wrong UUID | Verify the UUID |
+| 500 `From time cannot be parsed.` | `start_time`/`end_time` missing or not ISO 8601 | Check time range parameters |
 
 ## MCP Server
 
 - **Package**: `@dotzero.ai/oee-mcp`
-- **Tools**: 21 (6 basic + 15 advanced, unlocked after auth)
+- **Tools**: 23 (6 basic + 17 advanced, unlocked after auth)
 
 ## Repository
 

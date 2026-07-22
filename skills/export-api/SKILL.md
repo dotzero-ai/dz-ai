@@ -15,10 +15,10 @@ This skill provides 13 tools for generating charts and exporting data:
 
 No authentication required. This is a pure rendering engine.
 
-For data workflows, authenticate with DotZero services first:
+For data workflows, authenticate with DotZero services first (opens a secure browser login; password never passes through the AI):
 
 ```
-auth_login(email: "user@example.com", password: "password", tenant_id: "tenant-id")
+auth_login(tenant_id: "your-tenant-id")
 ```
 
 ## Tools Reference
@@ -214,4 +214,4 @@ export_table_from_json(data: <result>, format: "xlsx", filename: "active-work-or
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai
