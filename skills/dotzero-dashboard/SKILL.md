@@ -136,11 +136,12 @@ This returns every cube's exact measures/dimensions (including all generated `su
 
 ## Dashboard REST API (dashboard-api :5062)
 
-The **dashboard-api** (Go/Echo/GORM) stores boards + panels — a *different* service from the Cube.js engine. All calls send `Authorization: Bearer <JWT>`; **tenant is server-side, never send `tenant_id`**. Base: local `http://localhost:5062`, prod `https://dashboard-api.dotzero.app`.
+The **dashboard-api** (Go/Echo/GORM) stores boards + panels — a *different* service from the Cube.js engine. All calls send `Authorization: Bearer <JWT>`; **tenant is server-side, never send `tenant_id`**. Base: local `http://localhost:5062`, prod `https://dashboard-api.dotzero.app`. A **board** is a menu leaf (page/container, in the `/menu` tree — no dedicated CRUD endpoint, every board write is a read-modify-write of the whole tree); a **panel** is a `/dashboard` row carrying the `viz_state`.
 
-- **List boards** — `GET {base}/menu` → `{"tree_data":[{category, children:[{_id,name,menuType:"dashboard"}]}]}`. A board = a `menuType:"dashboard"` child; match `name` to get its `board_id`.
-- **List panels** — `GET {base}/dashboard` (optional `?board_id=` / `?name=`) → JSON array of `{_id(=panel_id), board_id, name, viz_state, custom_style, layout}`. No server-side paging. `name` may be a multilingual JSON string; show `zh-TW`.
-- **Create panel** — `POST {base}/dashboard`, body is a **JSON ARRAY** (batch, even for one). `viz_state`/`custom_style`/`layout` are JSON **strings**:
+**Panels:**
+- **List** — `GET {base}/dashboard` (optional `?board_id=` / `?name=` / `?_id=`) → JSON array of `{_id(=panel_id), board_id, name, viz_state, custom_style, layout}`. No server-side paging. `name` may be a multilingual JSON string; show `zh-TW`.
+- **Get one** — `GET {base}/dashboard/{panel_id}` → the single row with full `viz_state`. Use it **before editing** to fetch the current `{chartType, query}`. A missing id returns `200` + `null` body (not 404) — treat null as not-found.
+- **Create** — `POST {base}/dashboard`, body is a **JSON ARRAY** (batch, even for one). `viz_state`/`custom_style`/`layout` are JSON **strings**:
 ```
 POST /dashboard
 [ {"board_id":"<24-hex>","name":"本週各機台良品數",
@@ -149,9 +150,25 @@ POST /dashboard
    "layout":"{\"website\":{\"x\":0,\"y\":0,\"w\":4,\"h\":8}}"} ]
 ```
 Returns created rows, each with a 24-hex `_id` (= panel_id). Errors are often a 500 with a plain-text body.
-- **Create board** — no dedicated endpoint: `GET /menu` → append `{"_id":"<24-hex>","name":"...","menuType":"dashboard","viewPermission":["employee","manager","boss"]}` under a category → `PUT {base}/menu` (or `POST` if none yet).
-- **Delete panel** — `DELETE {base}/dashboard/{panel_id}`.
+- **Update** — `PUT {base}/dashboard/{panel_id}`, body a **SINGLE object** (NOT the array create uses). GORM `.Updates` writes **non-zero fields only** → sends just the keys you include. Because `viz_state` bundles both `chartType` and `query` in one string, you MUST read-modify-write: `GET /dashboard/{id}` → parse `viz_state` → change only `chartType`/`query` → re-stringify → `PUT` it. Otherwise you drop the untouched half. Send only changed fields (`viz_state`, and/or `name`/`board_id`/`custom_style`/`layout`, all still JSON strings); never send `_id` or `tenant_id`. Moving a panel = send new `board_id`.
+- **Delete** — `DELETE {base}/dashboard/{panel_id}`. **Soft delete** (`is_delete=1`); returns `200` NoContent with an **empty body — don't JSON-parse it** (`204` also = success).
+- **Bulk (advanced)** — `POST {base}/dashboard/byBoardId` copies all panels under a board; `DELETE {base}/dashboard/byBoardId?board_id=<id>` soft-deletes all under a board.
+
+**Boards (all via `/menu` read-modify-write):**
+- **List** — `GET {base}/menu` → `{"tree_data":[{category, children:[{_id,name,menuType:"dashboard",viewPermission}]}]}`. A board = a `menuType:"dashboard"` child; match `name` to get its `board_id`.
+- **Create** — `GET /menu` → append `{"_id":"<24-hex>","name":"...","menuType":"dashboard","viewPermission":["employee","manager","boss"]}` under a category → `PUT {base}/menu` (or `POST` if none yet).
+- **Update** — `GET /menu` → find the node by `_id` → edit `name`/`viewPermission` in place, or move it by splicing between categories' `children` → `PUT {base}/menu`.
+- **Delete** — two steps: (1) `DELETE {base}/dashboard/byBoardId?board_id=<id>` to soft-delete its panels **first** (retry-safe), then (2) `GET /menu` → remove the node → `PUT {base}/menu`.
+
+> **⚠️ Read-modify-write, both resources.** `PUT /menu` **replaces the entire `tree_data`** — send the full merged tree or any omitted board/category is deleted. `PUT /dashboard/:id` writes non-zero fields only — read the current `viz_state` and merge, don't rebuild it. Rule: **GET current → merge → PUT the whole thing.**
+
 - **User link** — `{dashboard_web}/dashboard/{boardName}` (local `http://localhost:3013`).
+
+## Custom queries beyond the schema
+
+You can author **any valid Cube.js query over the existing schema** — compose `measures` (every indicator is exposed as `sum`/`avg`/`count`), `dimensions`, `filters`, `timeDimensions` + `granularity`. That covers almost every real "custom query" need. The catalog above is a curated subset; validate any unlisted member name against `GET /cubejs-api/v1/meta` before storing it (an unknown member renders a blank panel).
+
+A **genuinely new measure/dimension/table or raw SQL is NOT authorable at runtime.** The Cube.js backend uses a **static, baked-in filesystem schema** (28 hand-written `schema/*.js` cubes shipped in the Docker image; no SQL-API, no raw-SQL passthrough, no per-tenant/dynamic schema — the "dynamic measures" are compile-time sugar over a hardcoded indicator list whose columns must already exist). Adding a new member requires a **backend change: edit `schema/*.js` → rebuild → redeploy** (a developer PR + restart), not an agent/end-user runtime action. There is no tool for runtime custom-cube/SQL authoring and none is planned.
 
 ## Repository
 
