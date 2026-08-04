@@ -20,6 +20,20 @@ dashboard-api  (:5062, Go)      → stores the panel row. viz_state/custom_style
 dashboard-backend (:5011, Node) → the Cube.js OLAP engine. The dashboard frontend runs your `query` against /cubejs-api/v1.
 ```
 
+### `CUBE_BASE` — where the Cube.js engine lives for *you*
+
+This skill refers to the Cube engine as `<CUBE_BASE>`. There is **no shared public
+endpoint**; it is whatever origin serves your DotZero dashboard:
+
+| Deployment | `CUBE_BASE` |
+|---|---|
+| Local / self-hosted dev | `http://localhost:5011` |
+| Hosted or on-prem | the origin your dashboard is served from (the frontend calls `/cubejs-api/v1` on it) — ask your DotZero administrator if unsure |
+
+If you cannot reach `<CUBE_BASE>`, you can still author panels from the field catalog
+below; you just can't verify member names live. Unverified member names render a blank
+panel, so prefer catalog members in that case.
+
 A panel is one row with fields `name`, `board_id`, `viz_state`, `custom_style`, `layout`. All three of `viz_state`/`custom_style`/`layout` are STRING columns holding JSON. The frontend `JSON.parse`s each, then renders. The Cube query inside `viz_state` is what pulls the numbers from dashboard-backend.
 
 ## viz_state schema
@@ -70,7 +84,7 @@ The `query` is a standard Cube.js query:
 
 ## Core cube field catalog
 
-Addresses are `CubeName.member`. This is the common core; the AUTHORITATIVE, complete list is live at `GET http://localhost:5011/cubejs-api/v1/meta` (Bearer required). Many measures are dynamically generated (`sum`/`avg`/`count` × indicator, e.g. `OeeDaily.sumQty`, `OeeDaily.avgOee`) — consult `/meta` rather than hardcoding everything.
+Addresses are `CubeName.member`. This is the common core; the AUTHORITATIVE, complete list is live at `GET <CUBE_BASE>/cubejs-api/v1/meta` (Bearer required; see `CUBE_BASE` above). Many measures are dynamically generated (`sum`/`avg`/`count` × indicator, e.g. `OeeDaily.sumQty`, `OeeDaily.avgOee`) — consult `/meta` rather than hardcoding everything.
 
 | Cube | Key measures | Key dimensions | Time member |
 |------|-------------|----------------|-------------|
@@ -128,7 +142,7 @@ Companion strings for any of the above: `custom_style` = `{"chartStyle":{"showLe
 Do not hardcode the full schema. Fetch it live:
 
 ```
-GET http://localhost:5011/cubejs-api/v1/meta
+GET <CUBE_BASE>/cubejs-api/v1/meta
 Authorization: Bearer <JWT>
 ```
 
@@ -172,4 +186,4 @@ A **genuinely new measure/dimension/table or raw SQL is NOT authorable at runtim
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai

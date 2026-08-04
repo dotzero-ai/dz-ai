@@ -85,7 +85,7 @@ auth_login(tenant_id: "your-tenant-id")
 The DotZero MCP server is not running. Add it to Claude Code:
 
 ```bash
-claude mcp add dotzero-auth --command npx --args "-y @dotzero.ai/auth-mcp"
+claude mcp add dotzero-auth -e USER_API_URL=https://user-api.dotzero.app -- npx -y @dotzero.ai/auth-mcp
 ```
 
 Then restart Claude Code and call `auth_login(tenant_id: "your-tenant-id")` again.

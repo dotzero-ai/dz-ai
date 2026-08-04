@@ -74,53 +74,50 @@ Creates `.dotzero/config.json` and updates `.gitignore`. Restart Claude Code aft
 
 ### Option 3: Manual MCP Setup
 
+Syntax is `claude mcp add <name> [-e KEY=value ...] -- <command> [args...]`.
+The `--` separator is required: everything after it is the command Claude Code runs.
+
 ```bash
 # Auth
 claude mcp add dotzero-auth \
-  --command "npx" \
-  --args "-y" "@dotzero.ai/auth-mcp" \
-  --env "USER_API_URL=https://user-api.dotzero.app"
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/auth-mcp
 
 # Work Order
 claude mcp add dotzero-workorder \
-  --command "npx" \
-  --args "-y" "@dotzero.ai/work-order-mcp" \
-  --env "WORK_ORDER_API_URL=https://work-order-api.dotzero.app" \
-  --env "USER_API_URL=https://user-api.dotzero.app"
+  -e WORK_ORDER_API_URL=https://work-order-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/work-order-mcp
 
 # SPC
 claude mcp add dotzero-spc \
-  --command "npx" \
-  --args "-y" "@dotzero.ai/spc-mcp" \
-  --env "SPC_API_URL=https://dotzerotech-spc-backend.dotzero.app" \
-  --env "USER_API_URL=https://user-api.dotzero.app"
+  -e SPC_API_URL=https://dotzerotech-spc-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/spc-mcp
 
 # Equipment
 claude mcp add dotzero-equipment \
-  --command "npx" \
-  --args "-y" "@dotzero.ai/equipment-mcp" \
-  --env "EQUIPMENT_API_URL=https://dotzerotech-equipment-api.dotzero.app" \
-  --env "USER_API_URL=https://user-api.dotzero.app"
+  -e EQUIPMENT_API_URL=https://dotzerotech-equipment-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/equipment-mcp
 
 # Device Topology
 claude mcp add dotzero-device-topology \
-  --command "npx" \
-  --args "-y" "@dotzero.ai/device-topology-mcp" \
-  --env "DEVICE_TOPOLOGY_API_URL=https://dotzerotech-device-topology.dotzero.app" \
-  --env "USER_API_URL=https://user-api.dotzero.app"
+  -e DEVICE_TOPOLOGY_API_URL=https://dotzerotech-device-topology.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/device-topology-mcp
 
 # OEE
 claude mcp add dotzero-oee \
-  --command "npx" \
-  --args "-y" "@dotzero.ai/oee-mcp" \
-  --env "OEE_API_URL=https://dotzerotech-oee-api.dotzero.app" \
-  --env "USER_API_URL=https://user-api.dotzero.app"
+  -e OEE_API_URL=https://dotzerotech-oee-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/oee-mcp
 
 # Export (no env vars needed)
-claude mcp add dotzero-export \
-  --command "npx" \
-  --args "-y" "@dotzero.ai/export-mcp"
+claude mcp add dotzero-export -- npx -y @dotzero.ai/export-mcp
 ```
+
+Verify with `claude mcp list`. Restart Claude Code after adding servers.
 
 ### Option 4: Skills Only (No MCP)
 

@@ -42,7 +42,7 @@ workorder_list(status: 2, limit: 20)
    auth_login(tenant_id: "your-tenant-id")
    ```
    This opens a browser login form. Token is saved automatically.
-   If `auth_login` is not available, run: `claude mcp add dotzero-auth --command npx --args "-y @dotzero.ai/auth-mcp"`
+   If `auth_login` is not available, run: `claude mcp add dotzero-auth -- npx -y @dotzero.ai/auth-mcp` (the `--` separator is required)
 2. `.dotzero/credentials.json` must exist with valid token
 
 ## 名詞對照 (Terminology)
@@ -52,90 +52,12 @@ workorder_list(status: 2, limit: 20)
 | 大工單 | 母工單 / 母製令單 | `/v1/workOrders/` | 生產工單主體，包含產品、數量、截止日等 |
 | 小工單 | 子工單 / 子製令單 / 工序工單 | `/v1/workOrderOpHistory/` | 工單下的個別工序作業紀錄，含作業員、機台、良品數等 |
 
-## Get Valid Token (Auto-Refresh)
+## Token and config (curl fallback only)
 
-**重要**: Token 會在 1 小時後過期。在每次 API 呼叫前，使用以下函數自動刷新過期的 token：
-
-```bash
-# Function to get valid token (auto-refresh if expired)
-get_valid_token() {
-  # Find .dotzero directory: project-level first, then user home
-  if [ -d ".dotzero" ]; then
-    _DOTZERO_DIR=".dotzero"
-  elif [ -d "${HOME}/.dotzero" ]; then
-    _DOTZERO_DIR="${HOME}/.dotzero"
-  else
-    _DOTZERO_DIR="${HOME}/.dotzero"
-  fi
-  CREDS_FILE="${_DOTZERO_DIR}/credentials.json"
-  CONFIG_FILE="${_DOTZERO_DIR}/config.json"
-
-  if [ ! -f "$CREDS_FILE" ]; then
-    echo "ERROR: Not logged in" >&2
-    return 1
-  fi
-
-  CREDS=$(cat "$CREDS_FILE")
-  EXPIRES_AT=$(echo "$CREDS" | jq -r '.expires_at // empty')
-
-  # Check if token is expired (with 5 minute buffer)
-  if [ -n "$EXPIRES_AT" ]; then
-    EXPIRES_TS=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${EXPIRES_AT%%.*}" "+%s" 2>/dev/null || date -d "$EXPIRES_AT" "+%s" 2>/dev/null || echo "0")
-    NOW_TS=$(date "+%s")
-    BUFFER=300
-
-    if [ $((EXPIRES_TS - BUFFER)) -gt $NOW_TS ]; then
-      echo "$CREDS" | jq -r '.token'
-      return 0
-    fi
-  fi
-
-  # Token expired, refresh it
-  echo "Token expired, refreshing..." >&2
-  REFRESH_TOKEN=$(echo "$CREDS" | jq -r '.refresh_token')
-  TENANT_ID=$(echo "$CREDS" | jq -r '.tenant_id')
-  USER_API_URL=$(cat "$CONFIG_FILE" | jq -r '.user_api_url')
-
-  RESPONSE=$(curl -s -X POST \
-    "${USER_API_URL}/v2/auth/token?tenantID=${TENANT_ID}" \
-    -H "Content-Type: application/json" \
-    -d "{\"grant_type\":\"refresh_token\",\"refresh_token\":\"${REFRESH_TOKEN}\"}")
-
-  # /v2/auth/token returns a plain JWT string
-  NEW_TOKEN=""
-  if echo "$RESPONSE" | jq -e 'type == "string"' > /dev/null 2>&1; then
-    NEW_TOKEN=$(echo "$RESPONSE" | jq -r '.')
-  elif [[ "$RESPONSE" == eyJ* ]]; then
-    NEW_TOKEN="$RESPONSE"
-  fi
-
-  if [ -n "$NEW_TOKEN" ]; then
-    NEW_EXPIRES=$(date -u -v+1H "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -d "+1 hour" "+%Y-%m-%dT%H:%M:%SZ")
-    echo "$CREDS" | jq --arg tok "$NEW_TOKEN" --arg exp "$NEW_EXPIRES" '
-      .token = $tok | .expires_at = $exp
-    ' > "$CREDS_FILE"
-    echo "$NEW_TOKEN"
-    return 0
-  else
-    echo "ERROR: Refresh failed, please login again" >&2
-    return 1
-  fi
-}
-```
-
-## Read Config and Token
-
-Before any API call, get a valid token:
-
-```bash
-# Load configuration
-CONFIG=$(cat .dotzero/config.json)
-API_URL=$(echo "$CONFIG" | jq -r '.work_order_api_url // "https://work-order-api.dotzero.app"')
-# Default: https://work-order-api.dotzero.app (do not ask user for this)
-
-# Get valid token (auto-refresh if expired)
-TOKEN=$(get_valid_token)
-```
+With the MCP tools you do not handle tokens at all. For the curl path, the
+`get_valid_token` helper (auto-refresh, 5-minute expiry buffer) and the config loading
+snippet are in **[references/curl-fallback.md](references/curl-fallback.md)**.
+Every `curl` example below assumes `$API_URL` and `$TOKEN` come from there.
 
 ## Work Order Status Values
 
@@ -539,153 +461,14 @@ curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-15T00:00:00Z&star
 | 422 | Validation error | Check input parameters |
 | 429 | Rate limited | Wait before retrying |
 
-### On 401 Error
-
-When you get a 401 error, the token has expired. Use `get_valid_token` function which auto-refreshes:
-
-```bash
-# Automatically refresh and get new token
-TOKEN=$(get_valid_token)
-
-# If using helper scripts:
-TOKEN=$(./scripts/dotzero-token.sh get)
-
-# Retry the failed request with new token
-curl -s "${API_URL}/v1/workOrders/" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-**Tip**: Always use `get_valid_token` before making API calls to avoid 401 errors.
+On 401 the token has expired — refresh and retry; see
+**[references/curl-fallback.md](references/curl-fallback.md)**.
 
 ---
 
 ## Quick Reference
 
-### Core MES
-
-| Operation | Method | Endpoint |
-|-----------|--------|----------|
-| List work orders | GET | `/v1/workOrders/` |
-| Get work order | GET | `/v1/workOrders/{id}` |
-| Get work order details | POST | `/v1/workOrders/details` (body: `{"work_order_id": ["..."]}` — string array) |
-| Create work order | POST | `/v1/workOrders/` |
-| Update work order | PATCH | `/v1/workOrders/{uuid}` |
-| Delete work order | DELETE | `/v1/workOrders/{uuid}` |
-| Work order count | GET | `/v1/count/workOrders` |
-| List products | GET | `/v1/products/` |
-| Get product | GET | `/v1/products/{uuid}` |
-| Get product details | GET | `/v1/products/{uuid}/details` |
-| Create product | POST | `/v1/products` |
-| Update product | PATCH | `/v1/products/{uuid}` |
-| Copy product | POST | `/v1/products/{uuid}/copyProduct` |
-| List workers | GET | `/v1/worker/` |
-| Get worker | GET | `/v1/worker/{uuid}` |
-| Create worker | POST | `/v1/worker/` |
-| Update worker | PATCH | `/v1/worker/{uuid}` |
-| Delete worker | DELETE | `/v1/worker/{uuid}` |
-
-### Routes & Operations
-
-| Operation | Method | Endpoint |
-|-----------|--------|----------|
-| List routes | GET | `/v1/routes/` |
-| Get route | GET | `/v1/routes/{uuid}` |
-| Create route | POST | `/v1/routes/` |
-| Update route | PATCH | `/v1/routes/{uuid}` |
-| Delete route | DELETE | `/v1/routes/{uuid}` |
-| Routes by product | GET | `/v1/routes/{productUuid}/byProductUuid` |
-| Copy route | POST | `/v1/routes/{uuid}/copyRoute` |
-| List operations | GET | `/v1/operation/` |
-| Get operation | GET | `/v1/operation/{uuid}` |
-| Create operation | POST | `/v1/operation/` |
-| Update operation | PATCH | `/v1/operation/{uuid}` |
-| Delete operation | DELETE | `/v1/operation/{uuid}` |
-| List route operations | GET | `/v1/routeOperation` |
-| Get route operation | GET | `/v1/routeOperation/{uuid}` |
-| Create route operation | POST | `/v1/routeOperation/` |
-| Update route operation | PATCH | `/v1/routeOperation/{uuid}` |
-| Delete route operation | DELETE | `/v1/routeOperation/{uuid}` |
-| Route ops by route | GET | `/v1/routeOperation/{routeUuid}/byRouteUuid` |
-
-### Operation History & Reports
-
-| Operation | Method | Endpoint |
-|-----------|--------|----------|
-| List op history | GET | `/v1/workOrderOpHistory/` |
-| Get op history | GET | `/v1/workOrderOpHistory/{uuid}` |
-| Create op history | POST | `/v1/workOrderOpHistory/` |
-| Batch create op history | POST | `/v1/workOrderOpHistory/many` |
-| Delete op history | DELETE | `/v1/workOrderOpHistory/{uuid}` |
-| Op history by work order | GET | `/v1/workOrderOpHistory/{uuid}/byWorkOrderUuid` |
-| Op history timeline | GET | `/v1/workOrderOpHistory/{uuid}/timeline` |
-| Work order report | GET | `/v1/workOrderReport/` |
-| Update report | PATCH | `/v1/workOrderReport/{uuid}` |
-| Work order dashboard | MCP | `workorder_dashboard` (one-call composite; replaces weekly report, backend route removed) |
-| Analytics operations | GET | `/v1/analytics/operations` |
-| Analytics WO report | GET | `/v1/analytics/workOrderReport` |
-| Worker efficiency ranking | MCP | `worker_efficiency_ranking` (MCP aggregation tool, no direct curl) |
-| Device utilization ranking | MCP | `device_utilization_ranking` (MCP aggregation tool, no direct curl) |
-| Production summary | MCP | `production_summary` (MCP aggregation tool, no direct curl) |
-| Material production ranking | MCP | `material_production_ranking` (MCP, uses dateRange filter for accurate time scope) |
-
-### Devices & Stations
-
-| Operation | Method | Endpoint |
-|-----------|--------|----------|
-| List devices | GET | `/v1/deviceInfo/` |
-| Get device | GET | `/v1/deviceInfo/{uuid}` |
-| Delete device | DELETE | `/v1/deviceInfo/{uuid}` |
-| List stations | GET | `/v1/stationInfo/` |
-| Get station | GET | `/v1/stationInfo/{uuid}` |
-| Create station | POST | `/v1/stationInfo/` |
-| Update station | PATCH | `/v1/stationInfo/{uuid}` |
-| Delete station | DELETE | `/v1/stationInfo/{uuid}` |
-| Station device list | GET | `/v1/stationInfo/{uuid}/deviceList` |
-
-> Device create/update are removed on the backend (`POST`/`PATCH /v1/deviceInfo` disabled); devices are read-only (list/get/delete).
-
-### Quality & Defects
-
-| Operation | Method | Endpoint |
-|-----------|--------|----------|
-| List defect reasons | GET | `/v1/defectReason/` |
-| Create defect reason | POST | `/v1/defectReason/` |
-| Update defect reason | PATCH | `/v1/defectReason/{uuid}` |
-| Delete defect reason | DELETE | `/v1/defectReason/{uuid}` |
-| List defect categories | GET | `/v1/defectReasonCategory/` |
-| Get defect category | GET | `/v1/defectReasonCategory/{uuid}` |
-| Create defect category | POST | `/v1/defectReasonCategory/` |
-| Update defect category | PATCH | `/v1/defectReasonCategory/{uuid}` |
-| List abnormal history | GET | `/v1/workHourAbnormalHistory/` |
-| Get abnormal history | GET | `/v1/workHourAbnormalHistory/{uuid}` |
-| Create abnormal history | POST | `/v1/workHourAbnormalHistory/` |
-| Update abnormal history | PATCH | `/v1/workHourAbnormalHistory/{uuid}` |
-| Abnormal by work order | GET | `/v1/workHourAbnormalHistory/{workOrderId}/byWorkOrderId` |
-| List abnormal categories | GET | `/v1/workHourAbnormalCategory/` |
-| Create abnormal category | POST | `/v1/workHourAbnormalCategory/` |
-| List abnormal states | GET | `/v1/workHourAbnormalState/` |
-| Create abnormal state | POST | `/v1/workHourAbnormalState/` |
-| List op product BOMs | GET | `/v1/operationProductBom/` |
-| Create op product BOM | POST | `/v1/operationProductBom/` |
-| Update op product BOM | PATCH | `/v1/operationProductBom/{uuid}` |
-| Delete op product BOM | DELETE | `/v1/operationProductBom/{uuid}` |
-
-### Warehouse & Inventory
-
-| Operation | Method | Endpoint |
-|-----------|--------|----------|
-| List warehouses | GET | `/v1/warehouse/` |
-| Get warehouse | GET | `/v1/warehouse/{uuid}` |
-| Create warehouse | POST | `/v1/warehouse/` |
-| Update warehouse | PATCH | `/v1/warehouse/{uuid}` |
-| List storage locations | GET | `/v1/warehouseStorage/` |
-| Get storage location | GET | `/v1/warehouseStorage/{uuid}` |
-| Create storage location | POST | `/v1/warehouseStorage/` |
-| Update storage location | PATCH | `/v1/warehouseStorage/{uuid}` |
-| List product storage | GET | `/v1/productStorage/` |
-| Get product storage | GET | `/v1/productStorage/{uuid}` |
-| Product storage by product | GET | `/v1/productStorage/{productUuid}/byProductUuid` |
-| WMS check inventory | PATCH | `/v1/wms/checkInventory` |
-| WMS query storage | POST | `/v1/wms/queryProductStorage` |
-| WMS storage history | GET | `/v1/wms/queryProductStorageHistory` |
-| WMS minimal stock count | GET | `/v1/wms/minimalStockLevelProductCount` |
+The MCP tools cover the common operations. The **complete endpoint table** (core MES,
+routes, operation history, devices/stations, quality/defects, warehouse) lives in
+**[references/endpoints.md](references/endpoints.md)** — consult it when you need an
+endpoint the MCP tools do not expose.

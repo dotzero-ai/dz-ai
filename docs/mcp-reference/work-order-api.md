@@ -1283,4 +1283,4 @@ Set `response_format: "json"` on any tool to get JSON output.
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai

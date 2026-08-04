@@ -143,9 +143,12 @@ auth_login(tenant_id: "my-company")
 
 ```bash
 claude mcp add dotzero-auth \
-  --command "node" \
-  --args "/path/to/dz-ai/packages/auth-mcp/dist/index.js"
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/auth-mcp
 ```
+
+Syntax is `claude mcp add <name> [-e KEY=value ...] -- <command> [args...]`; the `--`
+separator is required. Verify with `claude mcp list`, then restart Claude Code.
 
 ## Error Handling
 
@@ -160,4 +163,4 @@ Backend errors come as JSON `{"errorType": "...", "errorMsg": "..."}`; login fai
 
 ## Repository
 
-https://gitlab.com/dotzero/dz-ai
+https://github.com/dotzero-ai/dz-ai

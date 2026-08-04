@@ -354,37 +354,74 @@ npx @dotzero.ai/setup
 
 ### Manual Setup
 
+Syntax is `claude mcp add <name> [-e KEY=value ...] -- <command> [args...]`. The `--`
+separator is required. Every server also needs `USER_API_URL` (auth is shared).
+
 ```bash
 # Auth
-claude mcp add dotzero-auth --command "node" --args "packages/auth-mcp/dist/index.js"
+claude mcp add dotzero-auth \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/auth-mcp
 
 # Work Order
-claude mcp add dotzero-workorder --command "node" --args "packages/work-order-mcp/dist/index.js" --env "WORK_ORDER_API_URL=https://work-order-api.dotzero.app"
+claude mcp add dotzero-workorder \
+  -e WORK_ORDER_API_URL=https://work-order-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/work-order-mcp
 
 # SPC
-claude mcp add dotzero-spc --command "node" --args "packages/spc-mcp/dist/index.js" --env "SPC_API_URL=https://dotzerotech-spc-backend.dotzero.app"
+claude mcp add dotzero-spc \
+  -e SPC_API_URL=https://dotzerotech-spc-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/spc-mcp
 
 # Equipment
-claude mcp add dotzero-equipment --command "node" --args "packages/equipment-mcp/dist/index.js" --env "EQUIPMENT_API_URL=https://dotzerotech-equipment-api.dotzero.app"
+claude mcp add dotzero-equipment \
+  -e EQUIPMENT_API_URL=https://dotzerotech-equipment-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/equipment-mcp
 
 # Device Topology
-claude mcp add dotzero-device-topology --command "node" --args "packages/device-topology-mcp/dist/index.js" --env "DEVICE_TOPOLOGY_API_URL=https://dotzerotech-device-topology.dotzero.app"
+claude mcp add dotzero-device-topology \
+  -e DEVICE_TOPOLOGY_API_URL=https://dotzerotech-device-topology.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/device-topology-mcp
 
 # OEE
-claude mcp add dotzero-oee --command "node" --args "packages/oee-mcp/dist/index.js" --env "OEE_API_URL=https://dotzerotech-oee-api.dotzero.app"
+claude mcp add dotzero-oee \
+  -e OEE_API_URL=https://dotzerotech-oee-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/oee-mcp
 
 # GDT (Engineering Drawings)
-claude mcp add dotzero-gdt --command "node" --args "packages/gdt-mcp/dist/index.js" --env "GDT_API_URL=https://gdt-backend.dotzero.app"
+claude mcp add dotzero-gdt \
+  -e GDT_API_URL=https://gdt-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/gdt-mcp
 
 # SCM (Supply Chain)
-claude mcp add dotzero-scm --command "node" --args "packages/scm-mcp/dist/index.js" --env "SCM_API_URL=https://dotzerotech-scm-backend.dotzero.app"
+claude mcp add dotzero-scm \
+  -e SCM_API_URL=https://dotzerotech-scm-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/scm-mcp
 
 # SD (Sales & Distribution)
-claude mcp add dotzero-sd --command "node" --args "packages/sd-mcp/dist/index.js" --env "SD_API_URL=https://sales-distribution-api.dotzero.app"
+claude mcp add dotzero-sd \
+  -e SD_API_URL=https://sales-distribution-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/sd-mcp
 
 # WMS (Warehouse)
-claude mcp add dotzero-wms --command "node" --args "packages/wms-mcp/dist/index.js" --env "WMS_API_URL=https://dotzerotech-wms-backend.dotzero.app"
+claude mcp add dotzero-wms \
+  -e WMS_API_URL=https://dotzerotech-wms-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/wms-mcp
+
+# Export (charts / CSV / XLSX — no env vars needed)
+claude mcp add dotzero-export -- npx -y @dotzero.ai/export-mcp
 ```
+
+Verify with `claude mcp list`. Restart Claude Code after adding servers.
 
 ---
 
