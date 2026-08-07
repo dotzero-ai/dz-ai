@@ -1,0 +1,11 @@
+# 公開 skill 的離線檢查。刻意不引用任何 secret：這個 repo 的 Actions secret
+# 會被 fork PR 讀到，而唯一有用的 secret 是能讀生產租戶的 token。
+# 需要憑證的線上契約驗證留在私有 repo，不進 CI。
+name: skills-check
+on: [push, pull_request]
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_public_skills.py

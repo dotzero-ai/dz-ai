@@ -26,7 +26,7 @@
   "listing": {
     "name": "DotZero AI Tools",
     "shortDescription": "MCP servers and skills for DotZero manufacturing systems",
-    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes 7 MCP servers with 217 tools covering Work Order management, SPC quality control, Equipment monitoring, Device Topology, and OEE analysis. Offers both native MCP integration and cross-platform REST API skills for any AI agent.",
+    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes 11 MCP servers with 263 tools covering Work Order management, SPC quality control, Equipment monitoring, Device Topology, and OEE analysis. Offers both native MCP integration and cross-platform REST API skills for any AI agent.",
     "category": "enterprise",
     "subcategory": "manufacturing",
     "icon": "factory",
@@ -57,13 +57,13 @@
     "node": ">=18"
   },
   "stats": {
-    "totalTools": 217,
-    "skills": 10
+    "totalTools": 263,
+    "skills": 12
   },
   "features": [
     {
       "title": "Dual-Track Architecture",
-      "description": "Choose between native MCP integration (217 tools) or cross-platform REST API skills"
+      "description": "Choose between native MCP integration (263 tools) or cross-platform REST API skills"
     },
     {
       "title": "Work Order Management",
