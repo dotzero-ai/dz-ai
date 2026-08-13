@@ -93,7 +93,7 @@ Batch upsert (create or update) SPC history records.
 - `items` (array, required): Array of history records
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-#### spc_history_batch_by_group
+#### spc_history_batch_upsert_by_group
 Ensure SPC history rows exist for the given (config, group name) pairs — creates empty rows if missing (PATCH /v2/history/batch/groupName/). There is no "get by group id" endpoint.
 
 **Parameters:**

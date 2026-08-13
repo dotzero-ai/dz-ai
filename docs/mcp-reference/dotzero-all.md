@@ -93,7 +93,7 @@ Manage measurement configurations, record inspection data, calculate control cha
 |----------|-------|-------|
 | Authentication | 2 | `auth_login`, `auth_status` |
 | Products V2 | 2 | `spc_product_manufacture_list`, `spc_product_stock_list` |
-| History V2 | 4 | `spc_history_list`, `spc_history_batch_upsert`, `spc_history_batch_by_group`, `spc_history_delete_by_group` |
+| History V2 | 4 | `spc_history_list`, `spc_history_batch_upsert`, `spc_history_batch_upsert_by_group`, `spc_history_delete_by_group` |
 | Config Parent V2 | 5 | `spc_config_parent_get`, `spc_config_parent_create`, `spc_config_parent_update`, `spc_config_parent_attachment_add`, `spc_config_parent_attachment_delete` |
 | Measure Config V1 | 9 | `spc_measure_config_list`, `spc_measure_config_get`, `spc_measure_config_create`, `spc_measure_config_update`, `spc_measure_config_delete`, `spc_measure_config_attachment_add`, `spc_measure_config_attachment_delete`, `spc_measure_config_modes`, `spc_measure_config_categories` |
 | Measure History V1 | 11 | `spc_measure_history_create`, `spc_measure_history_upsert`, `spc_measure_history_update`, `spc_measure_history_delete`, `spc_measure_history_batch_upsert`, `spc_measure_history_batch_delete`, `spc_measure_history_manufacture`, `spc_measure_history_stock`, `spc_measure_history_count`, `spc_measure_history_filter_list`, `spc_measure_history_filter_list_stock` |
