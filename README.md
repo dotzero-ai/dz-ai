@@ -19,17 +19,25 @@ To update later:
 
 ## What's Included
 
-### MCP Servers (231 tools)
+### MCP Servers (263 tools)
 
 | Server | Package | Tools | Description |
 |--------|---------|-------|-------------|
 | dotzero-auth | `@dotzero.ai/auth-mcp` | 3 | Authentication (login, refresh, status) |
-| dotzero-workorder | `@dotzero.ai/work-order-mcp` | 98 | Work orders, products, routes, operations, devices, quality, warehouse, WMS |
-| dotzero-spc | `@dotzero.ai/spc-mcp` | 41 | SPC measurement configs, inspection data, control charts, statistics |
+| dotzero-workorder | `@dotzero.ai/work-order-mcp` | 103 | Work orders, products, routes, operations, devices, quality, warehouse, WMS |
+| dotzero-spc | `@dotzero.ai/spc-mcp` | 49 | SPC measurement configs, inspection data, control charts, statistics |
 | dotzero-equipment | `@dotzero.ai/equipment-mcp` | 12 | Real-time machine status, alarms, idle time, part counts |
-| dotzero-device-topology | `@dotzero.ai/device-topology-mcp` | 37 | Factory/line/device hierarchy, plant floors, alarm codes |
-| dotzero-oee | `@dotzero.ai/oee-mcp` | 20 | Availability, quality, performance, OEE at device/line/factory |
-| dotzero-export | `@dotzero.ai/export-mcp` | 14 | Chart generation (PNG/JPG) and data export (CSV/XLSX), no auth required |
+| dotzero-device-topology | `@dotzero.ai/device-topology-mcp` | 39 | Factory/line/device hierarchy, plant floors, alarm codes |
+| dotzero-oee | `@dotzero.ai/oee-mcp` | 23 | Availability, quality, performance, OEE at device/line/factory |
+| dotzero-export | `@dotzero.ai/export-mcp` | 13 | Chart generation (PNG/JPG) and data export (CSV/XLSX), no auth required |
+| dotzero-gdt | `@dotzero.ai/gdt-mcp` | 5 | Engineering drawings — search, similarity retrieval, features (dimensions / GD&T / hole counts). Read-only |
+| dotzero-scm | `@dotzero.ai/scm-mcp` | 6 | Supply chain — open deliveries, pending QA, supplier performance, billable items. Read-only |
+| dotzero-sd | `@dotzero.ai/sd-mcp` | 5 | Sales & distribution — sales orders, order details, customer master. Read-only |
+| dotzero-wms | `@dotzero.ai/wms-mcp` | 5 | Warehouse — stock levels, low-stock alerts, work-order picking progress. Read-only |
+
+> Counts come from the tool registrations, not from hand-editing this table. The
+> gateway (`@dotzero.ai/dotzero-mcp` — 6 startup tools plus dynamic loading) proxies
+> the servers above, so it is not added to the total.
 
 ### Cross-Platform Skills (REST API)
 
@@ -43,7 +51,12 @@ Works with any AI Agent that supports curl/WebFetch, no MCP required:
 | `dotzero-equipment` | Equipment monitoring |
 | `dotzero-device-topology` | Device topology management |
 | `dotzero-oee` | OEE analysis |
-| `dotzero-export` | Chart generation and data export (no auth required) |
+| `dotzero-gdt` | Engineering drawing lookup and similarity search (read-only) |
+| `dotzero-scm` | Supply chain — deliveries, QA, supplier performance (read-only) |
+| `dotzero-sd` | Sales orders and customer master (read-only) |
+| `dotzero-wms` | Stock levels, low-stock alerts, picking progress (read-only) |
+| `dotzero-dashboard` | Dashboard panel authoring (Cube.js `viz_state`) — no MCP server, REST only |
+| `dotzero-export` | Chart generation and data export — **the one skill that requires MCP** (no public REST endpoint) |
 
 ## Installation Options
 
@@ -210,7 +223,7 @@ Credentials are stored in `.dotzero/credentials.json` (auto-created on login, pe
 
 > **你可以這樣問：** 「這週的生產進度報告」
 >
-> **AI 會做的事：** 呼叫 `weekly_report` 或 `production_summary` 取得本週彙總
+> **AI 會做的事：** 呼叫 `production_summary` 或 `workorder_dashboard` 取得本週彙總
 >
 > **回覆範例：**
 > **本週生產報告（2/3 – 2/8）**
@@ -573,7 +586,7 @@ export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZ
 
 ## MCP Tool Categories
 
-### Work Order API (98 tools)
+### Work Order API (103 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -598,7 +611,7 @@ export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZ
 | Product Storage | 3 | List + get + by product |
 | WMS | 4 | Inventory, storage, history, stock |
 
-### SPC API (41 tools)
+### SPC API (49 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -624,7 +637,7 @@ export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZ
 | Off Time | 1 | Off-time records |
 | State Counts | 2 | Factory + line aggregations |
 
-### Device Topology API (37 tools)
+### Device Topology API (39 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -638,7 +651,7 @@ export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZ
 | Alarm Codes | 6 | Alarm code CRUD + batch |
 | Topology | 2 | Count + full tree |
 
-### OEE API (20 tools)
+### OEE API (23 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -650,7 +663,7 @@ export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZ
 | Status | 1 | Device OEE status |
 | Alarm History | 1 | OEE-related alarms |
 
-### Export API (14 tools)
+### Export API (13 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|

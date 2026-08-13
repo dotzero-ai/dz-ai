@@ -147,8 +147,13 @@ claude mcp add dotzero-auth \
   -- npx -y @dotzero.ai/auth-mcp
 ```
 
-Syntax is `claude mcp add <name> [-e KEY=value ...] -- <command> [args...]`; the `--`
-separator is required. Verify with `claude mcp list`, then restart Claude Code.
+> The form is `claude mcp add <name> [-e K=V ...] -- <command> [args...]`; the `--`
+> separator is required. There is no `--command` / `--args` — passing them fails with
+> `error: unknown option '--command'`. (`--env` does exist, as the long form of
+> `-e`; what breaks the old snippets is `--command` / `--args`, and the command
+> itself must follow `--`.)
+>
+> Verify with `claude mcp list`, then restart Claude Code.
 
 ## Error Handling
 

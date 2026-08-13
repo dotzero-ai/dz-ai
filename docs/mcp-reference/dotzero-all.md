@@ -1,10 +1,13 @@
-# DotZero All Systems Skill
+# DotZero All Systems — MCP Tool Reference
 
-Aggregate skill for accessing all DotZero MCP servers and tools.
+Index of every DotZero MCP server and the tools it exposes.
 
 ## Overview
 
-This skill provides access to all DotZero system integrations through MCP servers.
+This is a **reference document, not a skill** — it describes the tool surface of the
+DotZero MCP servers so you can look up a tool's name and arguments. It only helps once
+the corresponding MCP server is actually registered (see [README](./README.md)).
+The auto-triggered, curl-based skills live in `skills/`.
 
 ## Getting Started
 
@@ -33,7 +36,7 @@ After authentication, you can use the service-specific tools.
 Centralized authentication for all DotZero services.
 
 - **MCP Server**: `@dotzero.ai/auth-mcp`
-- **Skill**: [auth](../auth/SKILL.md)
+- **Reference**: [auth](./auth.md)
 - **Tools**: 3
 
 | Tool | Description |
@@ -49,8 +52,8 @@ Centralized authentication for all DotZero services.
 Manage work orders, products, workers, routes, operations, devices, quality, warehouse, and WMS in manufacturing execution systems (MES).
 
 - **MCP Server**: `@dotzero.ai/work-order-mcp`
-- **Skill**: [work-order-api](../work-order-api/SKILL.md)
-- **Tools**: 101
+- **Reference**: [work-order-api](./work-order-api.md)
+- **Tools**: 103
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -74,6 +77,7 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 | Warehouse Storage | 4 | `warehouse_storage_list`, `warehouse_storage_get`, `warehouse_storage_create`, `warehouse_storage_update` |
 | Product Storage | 3 | `product_storage_list`, `product_storage_get`, `product_storage_by_product` |
 | WMS | 4 | `wms_check_inventory`, `wms_query_product_storage`, `wms_query_storage_history`, `wms_minimal_stock_count` |
+| Cache | 4 | `workorder_cache_status`, `workorder_cache_download`, `workorder_cache_query`, `workorder_cache_clear` — local SQL cache of work-order data |
 
 ---
 
@@ -82,7 +86,7 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 Manage measurement configurations, record inspection data, calculate control charts, and monitor quality statistics.
 
 - **MCP Server**: `@dotzero.ai/spc-mcp`
-- **Skill**: [spc-api](../spc-api/SKILL.md)
+- **Reference**: [spc-api](./spc-api.md)
 - **Tools**: 49
 
 | Category | Count | Tools |
@@ -105,7 +109,7 @@ Manage measurement configurations, record inspection data, calculate control cha
 Monitor real-time machine status, alarms, idle time, part counts, and equipment state aggregations.
 
 - **MCP Server**: `@dotzero.ai/equipment-mcp`
-- **Skill**: [equipment-api](../equipment-api/SKILL.md)
+- **Reference**: [equipment-api](./equipment-api.md)
 - **Tools**: 12
 
 | Category | Count | Tools |
@@ -124,7 +128,7 @@ Monitor real-time machine status, alarms, idle time, part counts, and equipment 
 Manage factory device topology — groups, factories, lines, devices, plant floors, alarms, and alarm codes.
 
 - **MCP Server**: `@dotzero.ai/device-topology-mcp`
-- **Skill**: [device-topology-api](../device-topology-api/SKILL.md)
+- **Reference**: [device-topology-api](./device-topology-api.md)
 - **Tools**: 39
 
 | Category | Count | Tools |
@@ -146,14 +150,14 @@ Manage factory device topology — groups, factories, lines, devices, plant floo
 Calculate and analyze OEE metrics — availability, quality, performance — at device, line, and factory levels.
 
 - **MCP Server**: `@dotzero.ai/oee-mcp`
-- **Skill**: [oee-api](../oee-api/SKILL.md)
-- **Tools**: 21
+- **Reference**: [oee-api](./oee-api.md)
+- **Tools**: 23
 
 | Category | Count | Tools |
 |----------|-------|-------|
 | Authentication | 2 | `auth_login`, `auth_status` |
-| Availability | 4 | `oee_availability_device`, `oee_availability_devices`, `oee_availability_line`, `oee_availability_factory` |
-| Quality | 4 | `oee_quality_device`, `oee_quality_devices`, `oee_quality_line`, `oee_quality_factory` |
+| Availability | 5 | `oee_availability_device`, `oee_availability_devices`, `oee_availability_line`, `oee_availability_factory`, `oee_availability_device_range` |
+| Quality | 5 | `oee_quality_device`, `oee_quality_devices`, `oee_quality_line`, `oee_quality_factory`, `oee_quality_device_range` |
 | Performance | 5 | `oee_performance_device`, `oee_performance_devices`, `oee_performance_line`, `oee_performance_factory`, `oee_performance_device_range` |
 | OEE (Combined) | 4 | `oee_device`, `oee_devices`, `oee_line`, `oee_factory` |
 | Status | 1 | `oee_device_status` |
@@ -166,7 +170,7 @@ Calculate and analyze OEE metrics — availability, quality, performance — at 
 Generate charts (PNG/JPG) and export data (CSV/XLSX) from DotZero manufacturing data. No authentication required.
 
 - **MCP Server**: `@dotzero.ai/export-mcp`
-- **Skill**: [export-api](../export-api/SKILL.md)
+- **Reference**: [export-api](./export-api.md)
 - **Tools**: 13
 
 | Category | Count | Tools |
@@ -183,7 +187,7 @@ Generate charts (PNG/JPG) and export data (CSV/XLSX) from DotZero manufacturing 
 Engineering drawing search, similarity retrieval, and drawing feature extraction (dimensions / GD&T / hole counts). Read-only.
 
 - **MCP Server**: `@dotzero.ai/gdt-mcp`
-- **Skill**: [gdt-api](../gdt-api/SKILL.md)
+- **Reference**: [gdt-api](./gdt-api.md)
 - **Tools**: 5 (2 auth + 3 read)
 
 | Tool | Description |
@@ -200,7 +204,7 @@ Engineering drawing search, similarity retrieval, and drawing feature extraction
 Queries for deliveries, QA inspection, supplier performance, and billable invoices. Read-only.
 
 - **MCP Server**: `@dotzero.ai/scm-mcp`
-- **Skill**: [scm-api](../scm-api/SKILL.md)
+- **Reference**: [scm-api](./scm-api.md)
 - **Tools**: 6 (2 auth + 4 read)
 
 | Tool | Description |
@@ -218,7 +222,7 @@ Queries for deliveries, QA inspection, supplier performance, and billable invoic
 Customer sales orders and customer master queries. Read-only.
 
 - **MCP Server**: `@dotzero.ai/sd-mcp`
-- **Skill**: [sd-api](../sd-api/SKILL.md)
+- **Reference**: [sd-api](./sd-api.md)
 - **Tools**: 5 (2 auth + 3 read)
 
 | Tool | Description |
@@ -235,7 +239,7 @@ Customer sales orders and customer master queries. Read-only.
 Stock levels, low-stock alerts, and work-order picking progress. Read-only.
 
 - **MCP Server**: `@dotzero.ai/wms-mcp`
-- **Skill**: [wms-api](../wms-api/SKILL.md)
+- **Reference**: [wms-api](./wms-api.md)
 - **Tools**: 5 (2 auth + 3 read)
 
 | Tool | Description |
@@ -269,6 +273,9 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 
 ## Tool Count Summary
 
+> 這張表的數字由 `scripts/count_mcp_tools.py` 直接從 `packages/*-mcp` 的 tool
+> 定義數出來 —— 動過任何 MCP 工具之後請重跑該腳本並更新這裡，不要手改。
+
 | MCP Server | Tools |
 |------------|-------|
 | auth-mcp | 3 |
@@ -276,14 +283,14 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | spc-mcp | 49 |
 | equipment-mcp | 12 |
 | device-topology-mcp | 39 |
-| oee-mcp | 21 |
+| oee-mcp | 23 |
 | export-mcp | 13 |
 | gdt-mcp | 5 |
 | scm-mcp | 6 |
 | sd-mcp | 5 |
 | wms-mcp | 5 |
-| dotzero-mcp (gateway) | 6 + dynamic |
-| **Total** | **~267** |
+| **Total (11 service servers)** | **263** |
+| dotzero-mcp (gateway) | 6 startup tools + dynamic loading (代理上面那些，不計入總數) |
 
 ---
 
@@ -354,8 +361,9 @@ npx @dotzero.ai/setup
 
 ### Manual Setup
 
-Syntax is `claude mcp add <name> [-e KEY=value ...] -- <command> [args...]`. The `--`
-separator is required. Every server also needs `USER_API_URL` (auth is shared).
+`claude mcp add` 的形式是 `claude mcp add <name> [-e K=V ...] -- <command> [args...]`。
+沒有 `--command` / `--args` 這兩個選項（給了會直接 `error: unknown option '--command'`）。
+`--env` 是存在的（`-e` 的長寫法），但指令與其參數一律要放在 `--` 後面。
 
 ```bash
 # Auth
@@ -393,6 +401,9 @@ claude mcp add dotzero-oee \
   -e USER_API_URL=https://user-api.dotzero.app \
   -- npx -y @dotzero.ai/oee-mcp
 
+# Export (no env vars needed)
+claude mcp add dotzero-export -- npx -y @dotzero.ai/export-mcp
+
 # GDT (Engineering Drawings)
 claude mcp add dotzero-gdt \
   -e GDT_API_URL=https://gdt-backend.dotzero.app \
@@ -416,12 +427,14 @@ claude mcp add dotzero-wms \
   -e WMS_API_URL=https://dotzerotech-wms-backend.dotzero.app \
   -e USER_API_URL=https://user-api.dotzero.app \
   -- npx -y @dotzero.ai/wms-mcp
-
-# Export (charts / CSV / XLSX — no env vars needed)
-claude mcp add dotzero-export -- npx -y @dotzero.ai/export-mcp
 ```
 
-Verify with `claude mcp list`. Restart Claude Code after adding servers.
+裝完用 `claude mcp list` 確認，然後重啟 Claude Code。
+
+> `USER_API_URL` 每個 server 都吃得到，但**不是必填** —— 沒給會退回
+> `@dotzero.ai/shared` 的 `DEFAULT_USER_API_URL`（`https://dotzerotech-user-api.dotzero.app`）。
+> 上面各行明寫是為了讓部署位置一目了然；`user-api.dotzero.app` 與 `dotzerotech-user-api.dotzero.app`
+> 實測是同一個 API 的兩個別名（`GET /v2/auth/login` 兩邊都回 405 = 路由在、只收 POST）。
 
 ---
 

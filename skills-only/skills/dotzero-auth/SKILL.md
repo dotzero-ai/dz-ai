@@ -54,10 +54,18 @@ cat > ~/.dotzero/config.json << 'EOF'
   "spc_api_url": "https://dotzerotech-spc-backend.dotzero.app",
   "equipment_api_url": "https://dotzerotech-equipment-api.dotzero.app",
   "device_topology_api_url": "https://dotzerotech-device-topology.dotzero.app",
-  "oee_api_url": "https://dotzerotech-oee-api.dotzero.app"
+  "oee_api_url": "https://dotzerotech-oee-api.dotzero.app",
+  "scm_api_url": "https://dotzerotech-scm-backend.dotzero.app",
+  "gdt_api_url": "https://gdt-backend.dotzero.app",
+  "sd_api_url": "https://sales-distribution-api.dotzero.app",
+  "wms_api_url": "https://dotzerotech-wms-backend.dotzero.app"
 }
 EOF
 ```
+
+> 這份範本要涵蓋**每一個** `dotzero-*` skill 會讀的 key。少一個就會靜默退回
+> 該 skill 自己 hardcode 的 fallback（例如 `dotzero-wms` 讀不到 `wms_api_url`），
+> 換了環境才會炸。新增 skill 時記得回來補這裡。
 
 > All URLs above are standard DotZero endpoints — no changes needed.
 > For project-level isolation, create `.dotzero/` in the project directory instead.

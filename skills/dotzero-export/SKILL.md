@@ -23,7 +23,17 @@ User → AI Agent → 1. Call DotZero MCP tool (json) → Get data
 - `@dotzero.ai/export-mcp` MCP server running
 - For data workflows: authenticate with DotZero services first via `auth_login`
 
-## Tools Reference (14 tools)
+> ⚠️ **這支是唯一需要 MCP 的 `dotzero-*` skill。** 其他 skill 都是純 curl 打 REST
+> 端點，這支不一樣 —— 出圖／出檔要在本機跑 canvas 與 xlsx 編碼，沒有對應的公開
+> REST 端點可以 curl，所以一定要先裝 export-mcp：
+>
+> ```bash
+> claude mcp add dotzero-export -- npx -y @dotzero.ai/export-mcp
+> ```
+>
+> 沒裝的話 `chart_*` / `export_*` 這些工具根本不存在，不要嘗試用 curl 代替。
+
+## Tools Reference (13 tools)
 
 ### Generic Charts (5)
 

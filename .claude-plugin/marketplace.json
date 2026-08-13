@@ -13,13 +13,13 @@
       "name": "dotzero",
       "source": "./",
       "description": "Full DotZero Plugin (MCP Servers + Skills)",
-      "version": "2.0.17"
+      "version": "2.0.18"
     },
     {
       "name": "dotzero-skills",
       "source": "./skills-only",
       "description": "Cross-platform DotZero Skills (REST API only, no MCP required)",
-      "version": "2.0.17",
+      "version": "2.0.18",
       "strict": false
     }
   ],

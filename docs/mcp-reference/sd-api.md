@@ -32,3 +32,7 @@ auth_login(tenant_id: "your-tenant-id")   # opens browser login; password never 
 
 - Numbers come straight from the API — do not fabricate.
 - These tools mirror the DotZero SD (Sales & Distribution) read endpoints (same data as the platform's sd app).
+
+## Repository
+
+https://github.com/dotzero-ai/dz-ai

@@ -33,3 +33,7 @@ auth_login(tenant_id: "your-tenant-id")   # opens browser login; password never 
 
 - Numbers come straight from the API — do not fabricate.
 - These tools mirror the DotZero SCM (Supply Chain) read endpoints (same data as the platform's scm app).
+
+## Repository
+
+https://github.com/dotzero-ai/dz-ai
