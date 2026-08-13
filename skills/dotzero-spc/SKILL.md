@@ -1,6 +1,6 @@
 ---
 name: dotzero-spc
-description: DotZero SPC 品質管理。量測配置、檢驗數據記錄、管制圖分析、製程能力計算。支援自動 token 刷新。
+description: DotZero SPC 品質（量測配置、檢驗數據、管制圖、製程能力）。Use when 使用者問量測值有沒有超規、管制圖怎麼判、Cpk 多少、量測點怎麼設定（spc, control chart, cpk, out of spec）。MCP 工具可用時直接叫工具（spc_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

@@ -1,6 +1,6 @@
 ---
 name: dotzero-sd
-description: DotZero SD 銷售與配送。查詢銷售訂單清單、單筆訂單明細、客戶清單。支援自動 token 刷新。
+description: DotZero SD 銷售與配送（銷售訂單清單 / 明細、客戶清單；唯讀）。Use when 使用者問有哪些銷售訂單、某張訂單的明細、客戶清單（sales order, order detail, customer list）。MCP 工具可用時直接叫工具（sd_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

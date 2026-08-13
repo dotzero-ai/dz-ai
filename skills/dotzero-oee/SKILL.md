@@ -1,6 +1,6 @@
 ---
 name: dotzero-oee
-description: DotZero OEE 分析。設備/產線/工廠的可用率、品質率、稼動率、綜合OEE，設備狀態與警報歷史。
+description: DotZero OEE 分析（設備 / 產線 / 工廠的可用率、表現率、良率、綜合 OEE）。Use when 使用者問 OEE / 稼動率為何偏低、要三率拆解或比較機台與產線（oee, availability, performance, quality rate）。MCP 工具可用時直接叫工具（oee_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

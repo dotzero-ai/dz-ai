@@ -1,6 +1,6 @@
 ---
 name: dotzero-auth
-description: DotZero 認證服務。登入取得 token，管理認證狀態，自動刷新過期 token。適用於任何 AI Agent。
+description: DotZero 認證（登入取 token、查狀態、自動刷新）。Use when 使用者要登入 DotZero、token 過期、其他 DotZero 服務回 401（login, auth token expired, 401）。MCP 工具可用時直接叫工具（auth_login / auth_status）；本 skill 只給路由與已知陷阱。
 compatibility: 需要網路存取和執行 curl 的能力
 metadata:
   author: dotzero

@@ -1,6 +1,6 @@
 ---
 name: dotzero-workorder
-description: DotZero 工單管理。建立、查詢、更新工單，查看產品、作業員、作業紀錄和報表。支援自動 token 刷新。
+description: DotZero 工單管理（建 / 查 / 改工單，產品、作業員、報工紀錄、報表）。Use when 使用者要開工單、查工單狀態、改工單、查產品或作業員、看產出報表（work order, production report, operator, product）。MCP 工具可用時直接叫工具（workorder_* / product_* / worker_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

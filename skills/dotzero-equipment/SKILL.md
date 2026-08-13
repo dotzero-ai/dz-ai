@@ -1,6 +1,6 @@
 ---
 name: dotzero-equipment
-description: DotZero 設備監控。即時機台狀態、警報紀錄、閒置時間、產出數量、工廠/產線設備狀態統計。
+description: DotZero 設備監控（即時狀態、警報、閒置、產出數）。Use when 使用者問某台機現在在跑還是停、最近有哪些告警、閒置多久、做了幾件（machine status, alarm history, idle time, part count）。MCP 工具可用時直接叫工具（equip_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

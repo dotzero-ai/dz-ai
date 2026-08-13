@@ -1,6 +1,6 @@
 ---
 name: dotzero-device-topology
-description: DotZero 設備拓撲管理。群組、工廠、產線、設備的階層結構，警報與警報代碼管理。
+description: DotZero 設備拓撲（群組 / 工廠 / 產線 / 設備階層、警報代碼）。Use when 使用者要看廠區與產線階層、找某台機的 device UUID、查警報代碼定義（factory line device hierarchy, device uuid, alarm code）。MCP 工具可用時直接叫工具（topo_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

@@ -1,6 +1,6 @@
 ---
 name: dotzero-gdt
-description: DotZero GDT 工程圖服務。查詢工程圖清單、相似圖檢索、圖面特徵（尺寸/GD&T/孔數）。全唯讀查詢。支援自動 token 刷新。
+description: DotZero GDT 工程圖（清單、相似圖檢索、圖面特徵；全唯讀）。Use when 使用者要查工程圖、找相似圖、問某張圖的尺寸 / GD&T / 孔數（engineering drawing, similar drawing, GD&T, hole count）。MCP 工具可用時直接叫工具（gdt_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

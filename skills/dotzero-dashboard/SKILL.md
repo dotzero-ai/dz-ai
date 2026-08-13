@@ -1,6 +1,6 @@
 ---
 name: dotzero-dashboard
-description: DotZero 儀表板 panel 撰寫。用 viz_state(chartType+Cube.js query) 定義圖表，掛到看板；含 cube 欄位與範例。
+description: DotZero 儀表板 panel 撰寫（viz_state = chartType + Cube.js query，含 cube 欄位與範例）。Use when 使用者要把某個統計做成看板卡片 / panel、開新看板放圖、或 panel 空白查不出原因（dashboard panel, add chart to board, blank panel, cube.js query）。**沒有對應的 MCP server**——照本文件自己打 REST，別等一支不存在的工具。
 compatibility: 需要先完成 dotzero-auth 認證；資料源在 dashboard-backend Cube.js
 metadata:
   author: dotzero

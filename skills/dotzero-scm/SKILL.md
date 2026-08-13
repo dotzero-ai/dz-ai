@@ -1,6 +1,6 @@
 ---
 name: dotzero-scm
-description: DotZero SCM 供應鏈與供應商管理。查詢待交貨、待品檢、供應商績效、可請款品項。支援自動 token 刷新。
+description: DotZero SCM 供應鏈（待交貨、待品檢、供應商績效、可請款）。Use when 使用者問哪些採購單還沒交貨、哪些待品檢、供應商準交與品質績效、可請款品項（open PO, pending inspection, supplier performance, billable）。MCP 工具可用時直接叫工具（scm_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero

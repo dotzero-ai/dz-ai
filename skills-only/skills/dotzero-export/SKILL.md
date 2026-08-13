@@ -1,6 +1,6 @@
 ---
 name: dotzero-export
-description: DotZero 圖表生成與資料匯出。將製造數據視覺化為 PNG/JPG 圖表，匯出為 CSV/XLSX。
+description: DotZero 圖表生成與資料匯出（PNG/JPG 圖、CSV/XLSX 檔；不需認證）。Use when 使用者要一張圖（長條 / 折線 / 圓餅 / 甘特 / OEE 拆解）或要下載成 CSV / Excel（draw a chart, export png, download csv, xlsx）；數據先由其他 DotZero skill 取得。MCP 工具可用時直接叫工具（chart_* / export_*）；本 skill 只給路由與已知陷阱。
 compatibility: 獨立運作，不需認證。搭配其他 DotZero skills 取得數據後使用。
 metadata:
   author: dotzero

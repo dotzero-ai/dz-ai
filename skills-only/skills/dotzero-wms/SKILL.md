@@ -1,6 +1,6 @@
 ---
 name: dotzero-wms
-description: DotZero WMS 倉儲查詢。庫存查詢、低於安全庫存清單、工單揀料完成進度。支援自動 token 刷新。
+description: DotZero WMS 倉儲（庫存查詢、低於安全庫存、工單揀料進度）。Use when 使用者問某張工單 / 序號的料夠不夠、哪些低於安全庫存要補、揀料到哪（stock query, low stock, picking progress）。MCP 工具可用時直接叫工具（wms_*）；本 skill 只給路由與已知陷阱。
 compatibility: 需要先完成 dotzero-auth 認證
 metadata:
   author: dotzero
