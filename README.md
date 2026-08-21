@@ -170,6 +170,30 @@ Credentials are stored in `.dotzero/credentials.json` (auto-created on login, pe
 
 **Important**: Add `.dotzero/` to your `.gitignore`.
 
+### Which environment? (`DOTZERO_ENV`)
+
+**Default is production.** Every server's built-in URL is `*.dotzero.app` — that domain is
+production. Set `DOTZERO_ENV` before launching Claude Code to point them all elsewhere:
+
+```bash
+DOTZERO_ENV=staging claude   # every dotzero-* server reads *.staging.dotzero.tech
+DOTZERO_ENV=prod    claude   # explicit production (same as leaving it unset)
+```
+
+- Only `.dotzero.app` hosts are rewritten — an explicit `*_API_URL` (localhost, a preview
+  deploy, an in-cluster address) is left untouched.
+- An invalid value **fails loudly** instead of quietly reading production.
+- Credentials are per environment: `credentials.json` for prod,
+  `credentials.staging.json` for staging — a staging login no longer clobbers your prod token.
+- Requires `@dotzero.ai/shared` 1.3.0+ (published 2026-08-21); the servers pull the latest
+  automatically via `npx -y`.
+
+Why it exists: without it, verifying an app on staging while asking these tools for the
+"real" numbers silently compares two different environments — the same query returned 315
+work orders on staging and 307 on production, 277 devices vs 274, while other services
+(SD, WMS) returned byte-identical data. Some services share data across environments and
+some don't, so the mismatch is invisible until it makes you chase a bug that isn't there.
+
 ## 使用範例 (Best Practices)
 
 以下是常見的使用情境，展示如何用自然語言讓 AI 幫你操作 DotZero 系統。
