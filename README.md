@@ -172,27 +172,30 @@ Credentials are stored in `.dotzero/credentials.json` (auto-created on login, pe
 
 ### Which environment? (`DOTZERO_ENV`)
 
-**Default is production.** Every server's built-in URL is `*.dotzero.app` — that domain is
-production. Set `DOTZERO_ENV` before launching Claude Code to point them all elsewhere:
+**Default is production.** Every server's built-in URL points at the production API
+(`*.dotzero.app`). If your organisation runs additional DotZero environments, one variable
+switches every server at once — set it before launching Claude Code:
 
 ```bash
-DOTZERO_ENV=staging claude   # every dotzero-* server reads *.staging.dotzero.tech
-DOTZERO_ENV=prod    claude   # explicit production (same as leaving it unset)
+DOTZERO_ENV=prod    claude   # production (also the default when unset)
+DOTZERO_ENV=staging claude   # a non-production DotZero environment
 ```
 
-- Only `.dotzero.app` hosts are rewritten — an explicit `*_API_URL` (localhost, a preview
-  deploy, an in-cluster address) is left untouched.
-- An invalid value **fails loudly** instead of quietly reading production.
-- Credentials are per environment: `credentials.json` for prod,
-  `credentials.staging.json` for staging — a staging login no longer clobbers your prod token.
-- Requires `@dotzero.ai/shared` 1.3.0+ (published 2026-08-21); the servers pull the latest
+- Only production `*.dotzero.app` hosts are rewritten. An explicit `*_API_URL` override
+  (localhost, a preview deploy, your own gateway) is always left untouched.
+- An invalid value **fails loudly** instead of quietly falling back to production.
+- Credentials are stored **per environment** (non-production gets its own file next to
+  `credentials.json`), so signing in to one environment no longer overwrites the token for
+  another.
+- Requires `@dotzero.ai/shared` 1.3.0+ (published 2026-08-21); servers pull the latest
   automatically via `npx -y`.
 
-Why it exists: without it, verifying an app on staging while asking these tools for the
-"real" numbers silently compares two different environments — the same query returned 315
-work orders on staging and 307 on production, 277 devices vs 274, while other services
-(SD, WMS) returned byte-identical data. Some services share data across environments and
-some don't, so the mismatch is invisible until it makes you chase a bug that isn't there.
+Why it exists: before this, the tools always answered from production. If you were testing
+an app against a different environment and asked these tools for the "real" numbers, you
+silently compared two environments — one query returned 315 work orders in one environment
+and 307 in the other, 277 devices vs 274, while other services returned byte-identical
+data. Some services share data across environments and some don't, so the mismatch stays
+invisible until it makes you chase a bug that was never there.
 
 ## 使用範例 (Best Practices)
 
