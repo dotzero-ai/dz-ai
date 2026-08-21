@@ -111,12 +111,6 @@ Delete SPC history rows for the given (config, group name) pairs (DELETE /v2/his
 
 ### Config Parent Tools (V2)
 
-#### spc_config_parent_get
-Get a parent config by UUID.
-
-**Parameters:**
-- `id` (string, required): Config parent UUID
-- `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_config_parent_create
 Create a new parent config.
@@ -410,25 +404,7 @@ Update a manufacture dashboard entry.
 
 ### Statistics Tools (V1)
 
-#### spc_statistics_nelson
-Run Nelson rule analysis on measurement data. All four filter params are **required** by the backend (400 if any is missing).
 
-**Parameters:**
-- `spc_measure_point_config_uuid` (string, **required**): Measure config UUID
-- `work_order_op_history_uuid` (string, **required**): Work order operation history UUID
-- `start_time` (string, **required**): Start time (ISO 8601 / RFC3339)
-- `end_time` (string, **required**): End time (ISO 8601 / RFC3339)
-- `response_format` ('markdown'|'json', default: 'markdown')
-
-#### spc_statistics_capability
-Calculate process capability indices (Cp, Cpk, Pp, Ppk). All four filter params are **required** by the backend (400 if any is missing).
-
-**Parameters:**
-- `spc_measure_point_config_uuid` (string, **required**): Measure config UUID
-- `work_order_op_history_uuid` (string, **required**): Work order operation history UUID
-- `start_time` (string, **required**): Start time (ISO 8601 / RFC3339)
-- `end_time` (string, **required**): End time (ISO 8601 / RFC3339)
-- `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_statistics_capability_by_point
 Calculate process capability from raw data points and spec limits (no config needed).
@@ -470,9 +446,14 @@ spc_measure_config_create(name: "Dimension A - Length", std_value: 10.0, measure
 # 3. Record measurements
 spc_measure_history_create(spc_measure_point_config_uuid: "config-uuid", value: 10.02)
 
-# 4. Run capability analysis (all four params required)
-spc_statistics_capability(spc_measure_point_config_uuid: "config-uuid", work_order_op_history_uuid: "wo-uuid", start_time: "2026-07-01T00:00:00Z", end_time: "2026-07-21T23:59:59Z")
+# 4. Run capability analysis (per measure point)
+spc_statistics_capability_by_point(spc_measure_point_config_uuid: "config-uuid", work_order_op_history_uuid: "wo-uuid", start_time: "2026-07-01T00:00:00Z", end_time: "2026-07-21T23:59:59Z")
 ```
+
+> `spc_statistics_capability` 與 `spc_statistics_nelson` 已於 2026-08-13 移除：它們轉發給
+> spc-backend 的 `DZ_SPC_STATISTIC_API` 上游，該上游對 production 實測不可達
+> （500 / 503，三次重打結果穩定）。上游恢復後可還原。
+> ⚠️ `spc_statistics_capability_by_point` 打的是同一個上游，很可能同樣不可用。
 
 ### Workflow: Check quality status
 
@@ -483,8 +464,9 @@ spc_measure_config_list()
 # 2. Get measurement count
 spc_measure_history_count(spc_measure_point_config_uuid: "config-uuid")
 
-# 3. Run Nelson rules (all four params required)
-spc_statistics_nelson(spc_measure_point_config_uuid: "config-uuid", work_order_op_history_uuid: "wo-uuid", start_time: "2026-07-01T00:00:00Z", end_time: "2026-07-21T23:59:59Z")
+# 3. 判異法則：spc_statistics_nelson 已移除（後端上游不可達，見上一節說明）
+#    目前可用的替代是 spc_rule_list（取規則定義）與 v3 的 outOfControl 統計端點
+spc_rule_list()
 ```
 
 ## V3 HTTP Endpoints (2026, not yet MCP tools)

@@ -87,20 +87,20 @@ Manage measurement configurations, record inspection data, calculate control cha
 
 - **MCP Server**: `@dotzero.ai/spc-mcp`
 - **Reference**: [spc-api](./spc-api.md)
-- **Tools**: 49
+- **Tools**: 46
 
 | Category | Count | Tools |
 |----------|-------|-------|
 | Authentication | 2 | `auth_login`, `auth_status` |
 | Products V2 | 2 | `spc_product_manufacture_list`, `spc_product_stock_list` |
 | History V2 | 4 | `spc_history_list`, `spc_history_batch_upsert`, `spc_history_batch_upsert_by_group`, `spc_history_delete_by_group` |
-| Config Parent V2 | 5 | `spc_config_parent_get`, `spc_config_parent_create`, `spc_config_parent_update`, `spc_config_parent_attachment_add`, `spc_config_parent_attachment_delete` |
+| Config Parent V2 | 4 | `spc_config_parent_create`, `spc_config_parent_update`, `spc_config_parent_attachment_add`, `spc_config_parent_attachment_delete` |
 | Measure Config V1 | 9 | `spc_measure_config_list`, `spc_measure_config_get`, `spc_measure_config_create`, `spc_measure_config_update`, `spc_measure_config_delete`, `spc_measure_config_attachment_add`, `spc_measure_config_attachment_delete`, `spc_measure_config_modes`, `spc_measure_config_categories` |
 | Measure History V1 | 11 | `spc_measure_history_create`, `spc_measure_history_upsert`, `spc_measure_history_update`, `spc_measure_history_delete`, `spc_measure_history_batch_upsert`, `spc_measure_history_batch_delete`, `spc_measure_history_manufacture`, `spc_measure_history_stock`, `spc_measure_history_count`, `spc_measure_history_filter_list`, `spc_measure_history_filter_list_stock` |
 | Instruments V1 | 5 | `spc_instrument_list`, `spc_instrument_create`, `spc_instrument_update`, `spc_instrument_delete`, `spc_instrument_batch_delete` |
 | Rules V1 | 1 | `spc_rule_list` |
 | Dashboard V1 | 6 | `spc_dashboard_list`, `spc_dashboard_create`, `spc_dashboard_update`, `spc_dashboard_delete`, `spc_dashboard_manufacture_create`, `spc_dashboard_manufacture_update` |
-| Statistics V1 | 4 | `spc_statistics_nelson`, `spc_statistics_capability`, `spc_statistics_capability_by_point`, `spc_statistics_calculate_result` |
+| Statistics V1 | 2 | `spc_statistics_capability_by_point`, `spc_statistics_calculate_result` |
 
 ---
 
@@ -289,7 +289,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | scm-mcp | 6 |
 | sd-mcp | 5 |
 | wms-mcp | 5 |
-| **Total (11 service servers)** | **263** |
+| **Total (11 service servers)** | **260** |
 | dotzero-mcp (gateway) | 6 startup tools + dynamic loading (代理上面那些，不計入總數) |
 
 ---
