@@ -12,10 +12,10 @@ MCP servers and Claude Code skills for [DotZero](https://dotzero.app) manufactur
 |---|---|
 | **Claude Code** | 在 Claude Code 裡輸入 `/plugin marketplace add dotzero-ai/dz-ai`，再輸入 `/plugin install dotzero@dz-ai` |
 | **Codex CLI** | `codex plugin marketplace add dotzero-ai/dz-ai`，再 `codex plugin add dotzero@dz-ai` |
-| **ChatGPT 桌面版** | 跟 Codex 共用設定（`~/.codex/config.toml`）：照上一列用 Codex 裝一次即可 |
+| **ChatGPT 桌面版** | 只有 **Work / Codex 模式**能用本機 MCP：先照上一列用 Codex 裝（兩者共用 `~/.codex/config.toml`）。一般聊天（Chat）模式跟網頁版一樣只能連雲端 MCP |
 | **Gemini CLI** | `gemini extensions install https://github.com/dotzero-ai/dz-ai` |
 | **Cursor / VS Code / Windsurf** | `npx @dotzero.ai/setup` |
-| **ChatGPT 網頁版、Claude 網頁版、Gemini App** | 這些只能連雲端的 MCP 網址，DotZero 雲端 MCP 建置中，上線後會在這裡公告網址 |
+| **ChatGPT 網頁版、Claude 網頁版、Gemini App** | 只能連雲端 MCP 網址——DotZero 雲端 MCP 部署中，上線後在這裡公告網址與加入步驟 |
 
 裝完**重開**你的 AI 工具。
 
