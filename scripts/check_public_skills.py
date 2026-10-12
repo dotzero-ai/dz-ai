@@ -200,6 +200,12 @@ def check_manifest_stats() -> None:
     report(claimed and all(int(c) == n_srv for c in claimed),
            f'文案宣稱 {claimed or "（沒寫）"} 個 MCP server，.mcp.json 實際 {n_srv} 個')
 
+    # Gemini CLI extension 的 mcpServers 是 .mcp.json 的複本（sync-public.sh 重產），不可各改各的
+    gem = json.loads((REPO / "gemini-extension.json").read_text())
+    mcp = json.loads((REPO / ".mcp.json").read_text())["mcpServers"]
+    report(gem.get("mcpServers") == mcp and gem.get("version") == json.loads((REPO / ".claude-plugin/plugin.json").read_text())["version"],
+           "gemini-extension.json 的 mcpServers / version 與 .mcp.json / plugin.json 一致")
+
 
 def check_mcp_add_syntax() -> None:
     print("[6/6] claude mcp add 語法")

@@ -2,30 +2,42 @@
 
 MCP servers and Claude Code skills for [DotZero](https://dotzero.app) manufacturing execution systems (MES).
 
-## Quick Install (Claude Code)
+## 安裝（三步驟）
 
-```
-/plugin marketplace add dotzero-ai/dz-ai
-/plugin install dotzero@dz-ai
-```
+需要：Node.js 18 以上、DotZero 帳號、你公司的**租戶 ID**（Tenant ID，不知道請問貴公司的 DotZero 管理員）。
 
-Restart Claude Code after install, then run `auth_login` to authenticate.
+### 1. 依你用的 AI 工具安裝
 
-To update later:
+| AI 工具 | 安裝指令 |
+|---|---|
+| **Claude Code** | 在 Claude Code 裡輸入 `/plugin marketplace add dotzero-ai/dz-ai`，再輸入 `/plugin install dotzero@dz-ai` |
+| **Codex CLI** | `codex plugin marketplace add dotzero-ai/dz-ai`，再 `codex plugin add dotzero@dz-ai` |
+| **ChatGPT 桌面版** | 跟 Codex 共用設定（`~/.codex/config.toml`）：照上一列用 Codex 裝一次即可 |
+| **Gemini CLI** | `gemini extensions install https://github.com/dotzero-ai/dz-ai` |
+| **Cursor / VS Code / Windsurf** | `npx @dotzero.ai/setup` |
+| **ChatGPT 網頁版、Claude 網頁版、Gemini App** | 這些只能連雲端的 MCP 網址，DotZero 雲端 MCP 建置中，上線後會在這裡公告網址 |
 
-```
-/plugin update dotzero@dz-ai
-```
+裝完**重開**你的 AI 工具。
+
+### 2. 登入
+
+跟 AI 說「**登入 DotZero**」並告訴它你的租戶 ID。瀏覽器會打開 DotZero 登入頁，在網頁上輸入帳號密碼即可——**密碼不會經過 AI**。登入一次後 token 會自動更新；換帳號就再登入一次。
+
+### 3. 開始使用
+
+直接用中文問，例如「目前有哪些進行中的工單？」「CNC-01 這週的 OEE？」「哪些機台在告警？」，更多例子見下方[使用範例](#使用範例-best-practices)。
+
+更新：Claude Code `/plugin update dotzero@dz-ai`；Codex `codex plugin marketplace upgrade dz-ai`；Gemini `gemini extensions update dotzero`。
 
 ## What's Included
 
-### MCP Servers (263 tools)
+### MCP Servers (260 tools)
 
 | Server | Package | Tools | Description |
 |--------|---------|-------|-------------|
 | dotzero-auth | `@dotzero.ai/auth-mcp` | 3 | Authentication (login, refresh, status) |
 | dotzero-workorder | `@dotzero.ai/work-order-mcp` | 103 | Work orders, products, routes, operations, devices, quality, warehouse, WMS |
-| dotzero-spc | `@dotzero.ai/spc-mcp` | 49 | SPC measurement configs, inspection data, control charts, statistics |
+| dotzero-spc | `@dotzero.ai/spc-mcp` | 46 | SPC measurement configs, inspection data, control charts, statistics |
 | dotzero-equipment | `@dotzero.ai/equipment-mcp` | 12 | Real-time machine status, alarms, idle time, part counts |
 | dotzero-device-topology | `@dotzero.ai/device-topology-mcp` | 39 | Factory/line/device hierarchy, plant floors, alarm codes |
 | dotzero-oee | `@dotzero.ai/oee-mcp` | 23 | Availability, quality, performance, OEE at device/line/factory |
@@ -128,6 +140,24 @@ claude mcp add dotzero-oee \
 
 # Export (no env vars needed)
 claude mcp add dotzero-export -- npx -y @dotzero.ai/export-mcp
+
+# SCM / GDT / SD / WMS (read-only)
+claude mcp add dotzero-scm \
+  -e SCM_API_URL=https://dotzerotech-scm-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/scm-mcp
+claude mcp add dotzero-gdt \
+  -e GDT_API_URL=https://gdt-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/gdt-mcp
+claude mcp add dotzero-sd \
+  -e SD_API_URL=https://sales-distribution-api.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/sd-mcp
+claude mcp add dotzero-wms \
+  -e WMS_API_URL=https://dotzerotech-wms-backend.dotzero.app \
+  -e USER_API_URL=https://user-api.dotzero.app \
+  -- npx -y @dotzero.ai/wms-mcp
 ```
 
 Verify with `claude mcp list`. Restart Claude Code after adding servers.
@@ -296,7 +326,7 @@ invisible until it makes you chase a bug that was never there.
 
 > **你可以這樣問：** 「齒輪 A 的外徑 Cpk 分析結果」
 >
-> **AI 會做的事：** 呼叫 `spc_statistics_capability` 計算 Cpk 及相關指標
+> **AI 會做的事：** 呼叫 `spc_measure_config_get` 取規格上下限、`spc_measure_history_manufacture` 取量測值，算出 Cp / Cpk
 >
 > **回覆範例：**
 > **齒輪 A — 外徑 Cpk 分析**
@@ -558,7 +588,7 @@ export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZ
 
 > **你可以這樣問：** 「畫一張外徑的 SPC 管制圖」
 >
-> **AI 會做的事：** 呼叫 `spc_measure_history_manufacture` 取得量測值，呼叫 `spc_statistics_capability` 取得 UCL/CL/LCL，再呼叫 `chart_control` 產生管制圖
+> **AI 會做的事：** 呼叫 `spc_measure_history_manufacture` 取得量測值並算出 UCL/CL/LCL，再呼叫 `chart_control` 產生管制圖
 >
 > **回覆範例：**
 > 已產生管制圖（30 個量測點）：
@@ -638,20 +668,20 @@ export-mcp 是純渲染引擎，**不需認證**即可使用。搭配其他 DotZ
 | Product Storage | 3 | List + get + by product |
 | WMS | 4 | Inventory, storage, history, stock |
 
-### SPC API (49 tools)
+### SPC API (46 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
 | Authentication | 2 | Login and status |
 | Products V2 | 2 | Manufacture + stock product lists |
 | History V2 | 4 | Batch upsert/query/delete by group |
-| Config Parent V2 | 5 | Parent config CRUD + attachments |
+| Config Parent V2 | 4 | Parent config create/update + attachments |
 | Measure Config V1 | 9 | Measure point config CRUD + modes + categories |
 | Measure History V1 | 11 | History CRUD + batch + filtering + counting |
 | Instruments V1 | 5 | Instrument CRUD + batch delete |
 | Rules V1 | 1 | Control chart rules |
 | Dashboard V1 | 6 | Dashboard CRUD + manufacture entries |
-| Statistics V1 | 4 | Nelson rules, capability, calculation |
+| Statistics V1 | 2 | Capability from raw points, precomputed results |
 
 ### Equipment API (12 tools)
 
