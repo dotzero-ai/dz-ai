@@ -54,9 +54,8 @@ workorder_list(status: 2, limit: 20)
 
 ## Token and config (curl fallback only)
 
-With the MCP tools you do not handle tokens at all. For the curl path, the
-`get_valid_token` helper (auto-refresh, 5-minute expiry buffer) and the config loading
-snippet are in **[references/curl-fallback.md](references/curl-fallback.md)**.
+With the MCP tools you do not handle tokens at all. For the curl path, the config/token
+snippet and what to do on a 401 are in **[references/curl-fallback.md](references/curl-fallback.md)**.
 Every `curl` example below assumes `$API_URL` and `$TOKEN` come from there.
 
 ## Work Order Status Values

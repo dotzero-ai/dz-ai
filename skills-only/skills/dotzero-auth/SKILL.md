@@ -23,7 +23,7 @@ Credentials are stored in `.dotzero/` directory (project-level if exists, otherw
 
 | File | Purpose |
 |------|---------|
-| `.dotzero/config.json` | API URLs configuration |
+| `.dotzero/config.json` | API URL overrides — **optional**; without it every skill uses the production URLs |
 | `.dotzero/credentials.json` | Token, refresh_token, and expiration time |
 
 **credentials.json 格式**:
@@ -42,7 +42,7 @@ Credentials are stored in `.dotzero/` directory (project-level if exists, otherw
 
 ## Initial Setup
 
-Before first use, create the config file (only needed once):
+**Optional** — only needed to point at non-default URLs (e.g. an on-prem deployment). Without this file every `dotzero-*` skill falls back to the production URLs below:
 
 ```bash
 # 建立 .dotzero 設定目錄（預設用家目錄，專案隔離用 .dotzero/）
@@ -90,46 +90,33 @@ auth_login(tenant_id: "your-tenant-id")
 
 ### If `auth_login` MCP tool is not available
 
-The DotZero MCP server is not running. Add it to Claude Code:
+The DotZero auth MCP server is not registered with this agent. Register it (user-level), restart the agent, then call `auth_login(tenant_id: "your-tenant-id")` again:
 
 ```bash
+# Claude Code
 claude mcp add dotzero-auth -e USER_API_URL=https://user-api.dotzero.app -- npx -y @dotzero.ai/auth-mcp
+# Codex CLI (writes ~/.codex/config.toml)
+codex mcp add dotzero-auth --env USER_API_URL=https://user-api.dotzero.app -- npx -y @dotzero.ai/auth-mcp
+# Gemini CLI
+gemini mcp add -s user -e USER_API_URL=https://user-api.dotzero.app dotzero-auth npx -y @dotzero.ai/auth-mcp
 ```
 
-Then restart Claude Code and call `auth_login(tenant_id: "your-tenant-id")` again.
+All three run the server locally via `npx`, so the browser login opens on the user's machine. Web-only
+clients (ChatGPT, the Gemini app) accept only remote HTTPS MCP servers and cannot run this one.
 
-### Fallback — curl (only if MCP cannot be set up)
+### Fallback — terminal login (only if MCP cannot be set up)
 
-Ask the user for their email **in chat**, then run (password will be asked in terminal):
+密碼**不可以**經過 AI：不要在對話裡要密碼，也不要把密碼放進你執行的指令。請使用者在**自己的終端機**執行（密碼隱藏輸入）：
 
 ```bash
-TENANT_ID="<from user>"
-EMAIL="<from user — ask in chat>"
-_DZ_DIR=$([ -d ".dotzero" ] && echo ".dotzero" || echo "${HOME}/.dotzero")
-USER_API_URL=$(cat "${_DZ_DIR}/config.json" 2>/dev/null | jq -r '.user_api_url // "https://dotzerotech-user-api.dotzero.app"')
-
-# Ask user to paste password here (or run in their own terminal for security)
-RESPONSE=$(curl -s -X POST \
-  "${USER_API_URL}/v2/auth/login?tenantID=${TENANT_ID}" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
-
-if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
-  EXPIRES_AT=$(date -u -v+1H "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -d "+1 hour" "+%Y-%m-%dT%H:%M:%SZ")
-  mkdir -p "$_DZ_DIR"
-  echo "$RESPONSE" | jq --arg tenant "$TENANT_ID" --arg exp "$EXPIRES_AT" '{
-    tenant_id: $tenant, email: .email, name: .name,
-    token: .token, refresh_token: .refresh_token, expires_at: $exp
-  }' > "${_DZ_DIR}/credentials.json"
-  echo "Login successful! Token expires at: $EXPIRES_AT"
-else
-  echo "Login failed: $RESPONSE"
-fi
+bash <(curl -fsSL https://raw.githubusercontent.com/dotzero-ai/dz-ai/main/scripts/dotzero-login.sh) <email> <tenant_id>
 ```
+
+成功後 token 寫進 `.dotzero/credentials.json`（目前目錄有 `.dotzero/` 就寫那裡，否則 `~/.dotzero/`），所有 `dotzero-*` skill 與 MCP server 都讀同一份。
 
 ## Get Valid Token (Auto-Refresh)
 
-**在每次 API 呼叫前，先檢查 token 是否過期，如過期則自動刷新：**
+**在每次 API 呼叫前，先檢查 token 是否過期，如過期則自動刷新。** 每次 Bash 呼叫都是新的 shell——函數要跟使用它的 curl 放在同一個指令裡：
 
 ```bash
 # Function to get valid token (auto-refresh if expired)
@@ -172,7 +159,8 @@ get_valid_token() {
 
   REFRESH_TOKEN=$(echo "$CREDS" | jq -r '.refresh_token')
   TENANT_ID=$(echo "$CREDS" | jq -r '.tenant_id')
-  USER_API_URL=$(cat "$CONFIG_FILE" | jq -r '.user_api_url')
+  USER_API_URL=$(jq -r '.user_api_url // empty' "$CONFIG_FILE" 2>/dev/null)
+  USER_API_URL=${USER_API_URL:-https://dotzerotech-user-api.dotzero.app}
 
   RESPONSE=$(curl -s -X POST \
     "${USER_API_URL}/v2/auth/token?tenantID=${TENANT_ID}" \
@@ -251,7 +239,8 @@ _DZ_DIR=$([ -d ".dotzero" ] && echo ".dotzero" || echo "${HOME}/.dotzero")
 CREDS=$(cat "${_DZ_DIR}/credentials.json")
 REFRESH_TOKEN=$(echo "$CREDS" | jq -r '.refresh_token')
 TENANT_ID=$(echo "$CREDS" | jq -r '.tenant_id')
-USER_API_URL=$(cat "${_DZ_DIR}/config.json" | jq -r '.user_api_url')
+USER_API_URL=$(jq -r '.user_api_url // empty' "${_DZ_DIR}/config.json" 2>/dev/null)
+USER_API_URL=${USER_API_URL:-https://dotzerotech-user-api.dotzero.app}
 
 RESPONSE=$(curl -s -X POST \
   "${USER_API_URL}/v2/auth/token?tenantID=${TENANT_ID}" \
@@ -314,10 +303,14 @@ Errors are returned as JSON `{"errorType": "...", "errorMsg": "..."}`. Note: log
 | HTTP | errorType | errorMsg (actual) | Solution |
 |------|-----------|-------------------|----------|
 | 500 | `INVALID_AUTH_INFO` | `Please check tenantId, email and password.` | Verify email and password |
-| 401 | `INVALID_AUTH_INFO` | `No such tenant.` | Ask user for correct tenant_id |
+| 500 | `INVALID_AUTH_INFO` | `No such tenant.` | Ask user for correct tenant_id |
+| 500 | `INVALID_AUTH_INFO` | `User is not existed.` | Email is not a member of this tenant — check tenant_id or ask the tenant admin |
+| 500 | `USER_DISABLED` | `This account is disabled.` | User was removed from / disabled in the tenant — ask the tenant admin |
 | 500 | `INVALID_DATA` | `Email / Password is not given.` | Ensure all required fields are provided |
 | 500 | `TOO_MANY_ATTEMPTS_TRY_LATER` | `Attemps too many times, please try later.` | Wait before retrying |
-| 500 | `ERROR_NOT_EXPECTED` | (varies) | Unexpected backend error — retry or report |
+| 500 | `TOKEN_EXPIRED` | `RefreshToken is expired.` | (refresh) Log in again |
+| 500 | `USER_NOT_FOUND` | `User was been deleted.` | (refresh) Account deleted — log in with another account |
+| 500 | `ERROR_NOT_EXPECTED` | (varies — on refresh e.g. `RefreshToken is not for the tenant specified by parameter.`) | Retry once; if refresh keeps failing, log in again |
 | 401 | (no body) | Token expired/invalid on protected endpoints | Auto-refresh or re-login |
 
 ## API Reference
@@ -357,9 +350,9 @@ Errors are returned as JSON `{"errorType": "...", "errorMsg": "..."}`. Note: log
 }
 ```
 
-**Response**: Plain JWT string (not a JSON object)
+**Response**: the raw JWT as `text/plain` — not JSON, no surrounding quotes
 ```
-"eyJhbG..."
+eyJhbG...
 ```
 
 Notes:
@@ -387,7 +380,7 @@ The most direct way to verify a token is still valid and confirm the current ide
 
 ## Helper Scripts
 
-If using the dz-ai repository, helper scripts are available:
+From a clone of the `dotzero-ai/dz-ai` repository (run in **your own terminal** — the login script prompts for the password):
 
 ```bash
 # Login

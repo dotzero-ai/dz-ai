@@ -280,7 +280,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 |------------|-------|
 | auth-mcp | 3 |
 | work-order-mcp | 103 |
-| spc-mcp | 49 |
+| spc-mcp | 46 |
 | equipment-mcp | 12 |
 | device-topology-mcp | 39 |
 | oee-mcp | 23 |
@@ -456,7 +456,7 @@ oee_factory(factory_uuid: "uuid", start_time: "2026-02-01T00:00:00Z", end_time: 
 **Monitor equipment:**
 ```
 equip_state_counts_factory(factory_uuid: "uuid")
-equip_realtime_batch(device_uuids: ["dev-1", "dev-2"])
+equip_machine_status_realtime_batch(device_uuids: "dev-1,dev-2")
 ```
 
 **Analyze SPC quality:**

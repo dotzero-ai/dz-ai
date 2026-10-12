@@ -13,20 +13,20 @@
       "name": "dotzero",
       "source": "./",
       "description": "Full DotZero Plugin (MCP Servers + Skills)",
-      "version": "2.0.20"
+      "version": "2.0.21"
     },
     {
       "name": "dotzero-skills",
       "source": "./skills-only",
       "description": "Cross-platform DotZero Skills (REST API only, no MCP required)",
-      "version": "2.0.20",
+      "version": "2.0.21",
       "strict": false
     }
   ],
   "listing": {
     "name": "DotZero AI Tools",
     "shortDescription": "MCP servers and skills for DotZero manufacturing systems",
-    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes 11 MCP servers with 263 tools covering Work Order management, SPC quality control, Equipment monitoring, Device Topology, and OEE analysis. Offers both native MCP integration and cross-platform REST API skills for any AI agent.",
+    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes 11 MCP servers with 260 tools covering Work Order management, SPC quality control, Equipment monitoring, Device Topology, and OEE analysis. Offers both native MCP integration and cross-platform REST API skills for any AI agent.",
     "category": "enterprise",
     "subcategory": "manufacturing",
     "icon": "factory",
@@ -57,21 +57,21 @@
     "node": ">=18"
   },
   "stats": {
-    "totalTools": 263,
+    "totalTools": 260,
     "skills": 12
   },
   "features": [
     {
       "title": "Dual-Track Architecture",
-      "description": "Choose between native MCP integration (263 tools) or cross-platform REST API skills"
+      "description": "Choose between native MCP integration (260 tools) or cross-platform REST API skills"
     },
     {
       "title": "Work Order Management",
-      "description": "98 tools for work orders, products, routes, operations, devices, quality, warehouse, WMS"
+      "description": "103 tools for work orders, products, routes, operations, devices, quality, warehouse, WMS"
     },
     {
       "title": "SPC Quality Control",
-      "description": "41 tools for measurement configs, inspection data, control charts, process capability (Cp/Cpk)"
+      "description": "46 tools for measurement configs, inspection data, control charts, process capability (Cp/Cpk)"
     },
     {
       "title": "Equipment Monitoring",
@@ -79,11 +79,11 @@
     },
     {
       "title": "Device Topology",
-      "description": "37 tools for managing factory hierarchy — groups, factories, lines, devices, plant floors, alarms"
+      "description": "39 tools for managing factory hierarchy — groups, factories, lines, devices, plant floors, alarms"
     },
     {
       "title": "OEE Analysis",
-      "description": "20 tools for availability, quality, performance, and combined OEE at device/line/factory levels"
+      "description": "23 tools for availability, quality, performance, and combined OEE at device/line/factory levels"
     },
     {
       "title": "Token Management",

@@ -17,7 +17,7 @@ operations; consult this only when you need an endpoint the tools do not expose.
 | List products | GET | `/v1/products/` |
 | Get product | GET | `/v1/products/{uuid}` |
 | Get product details | GET | `/v1/products/{uuid}/details` |
-| Create product | POST | `/v1/products` |
+| Create product | POST | `/v1/products/` |
 | Update product | PATCH | `/v1/products/{uuid}` |
 | Copy product | POST | `/v1/products/{uuid}/copyProduct` |
 | List workers | GET | `/v1/worker/` |
@@ -42,7 +42,7 @@ operations; consult this only when you need an endpoint the tools do not expose.
 | Create operation | POST | `/v1/operation/` |
 | Update operation | PATCH | `/v1/operation/{uuid}` |
 | Delete operation | DELETE | `/v1/operation/{uuid}` |
-| List route operations | GET | `/v1/routeOperation` |
+| List route operations | GET | `/v1/routeOperation/` |
 | Get route operation | GET | `/v1/routeOperation/{uuid}` |
 | Create route operation | POST | `/v1/routeOperation/` |
 | Update route operation | PATCH | `/v1/routeOperation/{uuid}` |

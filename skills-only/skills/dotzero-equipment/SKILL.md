@@ -13,28 +13,21 @@ Monitor equipment status, alarms, idle time, part counts, and state aggregations
 
 ## Prerequisites
 
-1. Complete `dotzero-auth` authentication first
-2. `.dotzero/credentials.json` must exist with valid token
-3. `.dotzero/config.json` must have `equipment_api_url` set
-
-## Setup
-
-```bash
-cat .dotzero/config.json
-# Should contain:
-# {
-#   "user_api_url": "https://dotzerotech-user-api.dotzero.app",
-#   "equipment_api_url": "https://dotzerotech-equipment-api.dotzero.app"
-# }
-```
+1. Log in first via `dotzero-auth` (MCP `auth_login`, or the terminal fallback described there)
+2. Credentials live in `.dotzero/credentials.json` — the project's `.dotzero/` if it exists, otherwise `~/.dotzero/` (same lookup as the MCP servers)
+3. `config.json` is optional — without it the production URL below is used
 
 ## Read Config and Token
 
+每次 Bash 呼叫都是新的 shell：這三行要跟後面的 curl 放在**同一個指令**裡。
+
 ```bash
-CONFIG=$(cat .dotzero/config.json)
-API_URL=$(echo "$CONFIG" | jq -r '.equipment_api_url // "https://dotzerotech-equipment-api.dotzero.app"')
-TOKEN=$(get_valid_token)
+DZ=$([ -d .dotzero ] && echo .dotzero || echo "$HOME/.dotzero")
+API_URL=$(jq -r '.equipment_api_url // empty' "$DZ/config.json" 2>/dev/null); API_URL=${API_URL:-https://dotzerotech-equipment-api.dotzero.app}
+TOKEN=$(jq -r .token "$DZ/credentials.json")
 ```
+
+回 401 = token 過期：照 `dotzero-auth` 的「Manual Token Refresh」換新後重試；refresh 也失敗就重新登入。
 
 ---
 

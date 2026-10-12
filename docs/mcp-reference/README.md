@@ -22,7 +22,7 @@ bought nothing and cost clarity.
 
 ## You need an MCP server for any of this to work
 
-Every tool named in these files (`workorder_list`, `oee_device`, `spc_statistics_capability`, …)
+Every tool named in these files (`workorder_list`, `oee_device`, `spc_measure_config_list`, …)
 only exists after the matching MCP server is registered with your agent. Without one,
 the tools simply are not there and the AI has nothing to call.
 
@@ -40,10 +40,10 @@ If you cannot (or do not want to) run MCP servers, use the cross-platform REST s
 
 | File | MCP server | Tools |
 |------|-----------|-------|
-| [dotzero-all.md](./dotzero-all.md) | *(index of all of them)* | 263 |
+| [dotzero-all.md](./dotzero-all.md) | *(index of all of them)* | 260 |
 | [auth.md](./auth.md) | `@dotzero.ai/auth-mcp` | 3 |
 | [work-order-api.md](./work-order-api.md) | `@dotzero.ai/work-order-mcp` | 103 |
-| [spc-api.md](./spc-api.md) | `@dotzero.ai/spc-mcp` | 49 |
+| [spc-api.md](./spc-api.md) | `@dotzero.ai/spc-mcp` | 46 |
 | [equipment-api.md](./equipment-api.md) | `@dotzero.ai/equipment-mcp` | 12 |
 | [device-topology-api.md](./device-topology-api.md) | `@dotzero.ai/device-topology-mcp` | 39 |
 | [oee-api.md](./oee-api.md) | `@dotzero.ai/oee-mcp` | 23 |

@@ -50,7 +50,7 @@ User → AI Agent → 1. Call DotZero MCP tool (json) → Get data
 | Tool | Description | Data Source |
 |------|-------------|-------------|
 | `chart_oee_breakdown` | OEE A/Q/P breakdown | `oee_device`, `oee_devices`, `oee_line`, `oee_factory` |
-| `chart_control` | SPC control chart (UCL/CL/LCL) | `spc_statistics_capability`, `spc_measure_history_*` |
+| `chart_control` | SPC control chart (UCL/CL/LCL) | `spc_measure_history_*` (values; compute UCL/CL/LCL from them) |
 | `chart_timeline` | Device state timeline | `equip_machine_status_history` |
 | `chart_multi` | Multi-chart dashboard (grid) | Multiple chart configs |
 
@@ -98,10 +98,10 @@ chart_oee_breakdown(
 
 ```
 # 1. Get measurement data
-spc_measure_history_manufacture(spc_config_parent_uuid: "uuid", response_format: "json")
+spc_measure_history_manufacture(spc_measure_point_config_uuid: "uuid", response_format: "json")
 
-# 2. Get capability stats
-spc_statistics_capability(spc_measure_point_config_uuid: "uuid", response_format: "json")
+# 2. Compute CL = mean, UCL/LCL = mean ± 3σ from the values
+#    (spc_statistics_capability was removed 2026-08-13 — its backend upstream is unreachable)
 
 # 3. Generate control chart
 chart_control(
@@ -118,13 +118,13 @@ chart_control(
 ### Production Summary CSV Export
 
 ```
-# 1. Get production data
-production_summary(start_time_start: "...", start_time_end: "...", response_format: "json")
+# 1. Get production data (returns a markdown table — this tool has no response_format)
+production_summary(start_time_start: "...", start_time_end: "...", group_by: "work_order")
 
-# 2. Export to CSV
-export_table_from_json(
-  data: <json_result>,
-  format: "csv",
+# 2. Export the table rows to CSV
+export_csv(
+  headers: ["Work Order", "Ops", "Qty", "Good", "Defect", "Defect Rate", "Hours", "Good/Hr"],
+  rows: [[...], ...],
   filename: "production-summary-feb"
 )
 ```
@@ -132,13 +132,14 @@ export_table_from_json(
 ### Worker Efficiency Bar Chart
 
 ```
-# 1. Get ranking data
-worker_efficiency_ranking(start_time_start: "...", start_time_end: "...", response_format: "json")
+# 1. Get ranking data (returns a markdown table — this tool has no response_format)
+worker_efficiency_ranking(start_time_start: "...", start_time_end: "...", top_n: 10)
 
-# 2. Auto-generate chart
-chart_from_json(
+# 2. Chart the ranking
+chart_bar(
   title: "Worker Efficiency Ranking",
-  data: <json_result>
+  labels: ["Worker A", "Worker B", ...],
+  datasets: [{ label: "Good parts", data: [1250, 1180, ...] }]
 )
 ```
 

@@ -13,33 +13,21 @@ Manage SPC measurement configurations, record inspection data, and analyze quali
 
 ## Prerequisites
 
-1. Complete `dotzero-auth` authentication first
-2. `.dotzero/credentials.json` must exist with valid token
-3. `.dotzero/config.json` must have `spc_api_url` set
+1. Log in first via `dotzero-auth` (MCP `auth_login`, or the terminal fallback described there)
+2. Credentials live in `.dotzero/credentials.json` — the project's `.dotzero/` if it exists, otherwise `~/.dotzero/` (same lookup as the MCP servers)
+3. `config.json` is optional — without it the production URL below is used
 
-## Setup
+## Read Config and Token
 
-Ensure config has the SPC API URL:
-
-```bash
-cat .dotzero/config.json
-# Should contain:
-# {
-#   "user_api_url": "https://dotzerotech-user-api.dotzero.app",
-#   "spc_api_url": "https://dotzerotech-spc-backend.dotzero.app"
-# }
-```
-
-## Get Valid Token
-
-**重要**: Token 會在 1 小時後過期。使用 `dotzero-auth` skill 中的 `get_valid_token` 函數。
+每次 Bash 呼叫都是新的 shell：這三行要跟後面的 curl 放在**同一個指令**裡。
 
 ```bash
-# Load configuration
-CONFIG=$(cat .dotzero/config.json)
-API_URL=$(echo "$CONFIG" | jq -r '.spc_api_url // "https://dotzerotech-spc-backend.dotzero.app"')
-TOKEN=$(get_valid_token)
+DZ=$([ -d .dotzero ] && echo .dotzero || echo "$HOME/.dotzero")
+API_URL=$(jq -r '.spc_api_url // empty' "$DZ/config.json" 2>/dev/null); API_URL=${API_URL:-https://dotzerotech-spc-backend.dotzero.app}
+TOKEN=$(jq -r .token "$DZ/credentials.json")
 ```
+
+回 401 = token 過期：照 `dotzero-auth` 的「Manual Token Refresh」換新後重試；refresh 也失敗就重新登入。
 
 ## ⚠️ 路徑重點(必讀)
 
@@ -249,6 +237,12 @@ curl -s -X POST "${API_URL}/v1/dashboard/" \
 
 ## Statistics Operations (V1)
 
+> ⚠️ **`/v1/statistics/nelson/` 與 `/v1/statistics/capability/` 在 production 不可用**——兩者都轉發給
+> spc-backend 的統計上游（`DZ_SPC_STATISTIC_API`），2026-08-13 實測各打 3 次：nelson 穩定回 500（空 body）、
+> capability 穩定回 503（upstream connect error）。MCP 已因此下架 `spc_statistics_nelson` / `spc_statistics_capability`。
+> `capability-by-point` 打同一個上游，同樣可能不可用。要看失控狀況改用 v3 的
+> `GET /v3/count/spcMeasurePointHistory/outOfControl`（見最後一節）。
+
 ### Nelson Rule Analysis
 
 **必填 query 參數**(缺任一即 400):`spcMeasurePointConfigUUID`、`workOrderOpHistoryUUID`、`startTime`、`endTime`(後兩者為 RFC3339,且 `startTime <= endTime`)。
@@ -416,9 +410,9 @@ curl -s -X DELETE "${API_URL}/v2/config/parent/${PARENT_UUID}/attachment/" \
 
 | Operation | Method | Endpoint |
 |-----------|--------|----------|
-| Nelson rules | GET | `/v1/statistics/nelson/` |
+| Nelson rules（⚠️ prod 回 500，見上方說明） | GET | `/v1/statistics/nelson/` |
 | Nelson by point | GET | `/v1/statistics/nelson-by-point/` |
-| Capability | GET | `/v1/statistics/capability/` |
+| Capability（⚠️ prod 回 503，見上方說明） | GET | `/v1/statistics/capability/` |
 | Capability by point | GET | `/v1/statistics/capability-by-point/` |
 | Calculate result | GET | `/v1/statisticCalculateResult/` |
 | List rules | GET | `/v1/rule/` |

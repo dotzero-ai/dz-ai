@@ -15,8 +15,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-CREDS_FILE=".dotzero/credentials.json"
-CONFIG_FILE=".dotzero/config.json"
+# Same lookup as the MCP servers: the project's .dotzero/ if it exists, otherwise ~/.dotzero/
+DZ_DIR=$([ -d .dotzero ] && echo .dotzero || echo "$HOME/.dotzero")
+CREDS_FILE="$DZ_DIR/credentials.json"
+CONFIG_FILE="$DZ_DIR/config.json"
 
 # Check if credentials file exists
 check_credentials() {
@@ -52,7 +54,9 @@ do_refresh() {
 
     local refresh_token=$(cat "$CREDS_FILE" | jq -r '.refresh_token')
     local tenant_id=$(cat "$CREDS_FILE" | jq -r '.tenant_id')
-    local user_api_url=$(cat "$CONFIG_FILE" 2>/dev/null | jq -r '.user_api_url // "https://dotzerotech-user-api.dotzero.app"')
+    # config.json is optional: a missing file must not leave the URL empty
+    local user_api_url=$(jq -r '.user_api_url // empty' "$CONFIG_FILE" 2>/dev/null)
+    user_api_url=${user_api_url:-https://dotzerotech-user-api.dotzero.app}
 
     if [ -z "$refresh_token" ] || [ "$refresh_token" = "null" ]; then
         echo -e "${RED}Error: No refresh token available. Please login again.${NC}" >&2
@@ -92,7 +96,8 @@ do_refresh() {
         echo -e "${GREEN}Token refreshed successfully!${NC}" >&2
         return 0
     else
-        local error=$(echo "$response" | jq -r '.message // .error // "Unknown error"' 2>/dev/null || echo "$response")
+        # user-api errors are {"errorType", "errorMsg"} with HTTP 500
+        local error=$(echo "$response" | jq -r '.errorMsg // .message // .error // "Unknown error"' 2>/dev/null || echo "$response")
         echo -e "${RED}Refresh failed: ${error}${NC}" >&2
         echo -e "${YELLOW}Please login again using dotzero-login.sh${NC}" >&2
         exit 1

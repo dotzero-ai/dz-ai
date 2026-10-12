@@ -4,7 +4,7 @@ MCP skill for Statistical Process Control (SPC) — manage measurement configura
 
 ## Overview
 
-This skill provides 49 tools for interacting with the SPC API:
+This skill provides 46 tools for interacting with the SPC API:
 
 - **Authentication** (2): Login and check auth status
 - **Products V2** (2): List manufacture and stock products
@@ -444,10 +444,10 @@ spc_product_manufacture_list()
 spc_measure_config_create(name: "Dimension A - Length", std_value: 10.0, measure_amount: 5)
 
 # 3. Record measurements
-spc_measure_history_create(spc_measure_point_config_uuid: "config-uuid", value: 10.02)
+spc_measure_history_create(spc_measure_point_config_uuid: "config-uuid", values: [10.02], measure_time: "2026-07-21T08:00:00Z")
 
 # 4. Run capability analysis (per measure point)
-spc_statistics_capability_by_point(spc_measure_point_config_uuid: "config-uuid", work_order_op_history_uuid: "wo-uuid", start_time: "2026-07-01T00:00:00Z", end_time: "2026-07-21T23:59:59Z")
+spc_statistics_capability_by_point(points: [10.02, 9.98, 10.01], good: 3, defect: 0, lsl: 9.5, usl: 10.5, std_value: 10.0, measure_amount: 1)
 ```
 
 > `spc_statistics_capability` 與 `spc_statistics_nelson` 已於 2026-08-13 移除：它們轉發給
@@ -494,7 +494,7 @@ These read-only v3 queries are useful for monitoring/reporting but are not expos
 ## MCP Server
 
 - **Package**: `@dotzero.ai/spc-mcp`
-- **Tools**: 49 (6 basic + 43 advanced, unlocked after auth)
+- **Tools**: 46 (6 basic + 40 advanced, unlocked after auth)
 
 ## Repository
 
