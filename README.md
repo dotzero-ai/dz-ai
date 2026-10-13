@@ -21,11 +21,11 @@ MCP servers and Claude Code skills for [DotZero](https://dotzero.app) manufactur
 
 **雲端 MCP**（網址 `https://dz-mcp-server.dotzero.app/mcp`）：
 
-| AI 工具 | 加入方式 |
-|---|---|
-| ChatGPT | 設定 → 開發者模式打開 → 外掛（Plugins）→ 新增 → 建立 MCP App，貼上網址 |
-| Claude（網頁／桌面） | 設定 → Connectors → Add custom connector，貼上網址 |
-| Gemini App | 設定 → Connected Apps → Add a custom app，貼上網址 |
+| AI 工具 | 誰能用 | 加入方式 |
+|---|---|---|
+| ChatGPT（網頁） | Business／Enterprise／Edu（管理員或擁有者開開發者模式、發佈到工作區）；Pro（只能用唯讀工具，本服務全是唯讀）。Free 不行，Plus 官方文件沒列 | 先開開發者模式（Settings → Apps → Advanced settings → Developer mode）。到 [chatgpt.com/plugins](https://chatgpt.com/plugins) → ＋ → **Add custom MCP server** → 填名稱、Server URL → 驗證選 **OAuth** → 勾「I understand and want to continue」→ **Create as a plugin** → 安裝 → 對話中輸入 `@` 選它 |
+| Claude（網頁、桌面、手機） | Free（限 1 個自訂 connector）、Pro、Max；Team／Enterprise 由 Owner 加 | **Customize → Connectors → Add custom connector** → 貼網址 → Authentication 選 **Sign in now** → OAuth client 選 **Register automatically**（不要選預設的「Use Claude's published identity」，本服務還不支援；設定加了就不能改，選錯要刪掉重加）→ **Add**。Team／Enterprise：Owner 到 **Organization settings → Connectors → Add → Custom → Web** 加，成員再到 Customize → Connectors 按 **Connect** |
+| Gemini App | 只限**美國**、18 歲以上、英文介面、個人 Google 帳號（公司／學校帳號不行），且要開 Keep Activity。台灣目前用不了，請改用 Gemini CLI | 在 gemini.google.com：**Settings → Connected Apps → Add a custom app** → 貼網址 → Next → 依畫面登入。加好後網頁版和手機 App 都能用，對話中輸入 `@` 選它 |
 
 第一次使用會跳出 DotZero 登入頁，填租戶 ID、帳號、密碼即可（密碼直接送到 DotZero，不經過 AI；每 30 天要重新登入）。雲端版只有唯讀查詢，沒有出圖與寫入。
 
