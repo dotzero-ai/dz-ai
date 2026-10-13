@@ -15,9 +15,19 @@ MCP servers and Claude Code skills for [DotZero](https://dotzero.app) manufactur
 | **ChatGPT 桌面版** | 只有 **Work / Codex 模式**能用本機 MCP：先照上一列用 Codex 裝（兩者共用 `~/.codex/config.toml`）。一般聊天（Chat）模式跟網頁版一樣只能連雲端 MCP |
 | **Gemini CLI** | `gemini extensions install https://github.com/dotzero-ai/dz-ai` |
 | **Cursor / VS Code / Windsurf** | `npx @dotzero.ai/setup` |
-| **ChatGPT 網頁版、Claude 網頁版、Gemini App** | 只能連雲端 MCP 網址——DotZero 雲端 MCP 部署中，上線後在這裡公告網址與加入步驟 |
+| **ChatGPT 網頁版、Claude 網頁版／桌面版、Gemini App** | 不用安裝，加入雲端 MCP 網址 `https://dz-mcp-server.dotzero.app/mcp`（見下表） |
 
 裝完**重開**你的 AI 工具。
+
+**雲端 MCP**（網址 `https://dz-mcp-server.dotzero.app/mcp`）：
+
+| AI 工具 | 加入方式 |
+|---|---|
+| ChatGPT | 設定 → 開發者模式打開 → 外掛（Plugins）→ 新增 → 建立 MCP App，貼上網址 |
+| Claude（網頁／桌面） | 設定 → Connectors → Add custom connector，貼上網址 |
+| Gemini App | 設定 → Connected Apps → Add a custom app，貼上網址 |
+
+第一次使用會跳出 DotZero 登入頁，填租戶 ID、帳號、密碼即可（密碼直接送到 DotZero，不經過 AI；每 30 天要重新登入）。雲端版只有唯讀查詢，沒有出圖與寫入。
 
 ### 2. 登入
 
