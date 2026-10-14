@@ -9,7 +9,7 @@
 3. Authenticate: `auth_login(tenant_id)` — opens a browser login page; the password never passes through the AI
 4. Use tools: `workorder_list()`, `oee_device()`, `chart_bar()`, etc.
 
-## Available MCP Tools (260)
+## Available MCP Tools (259)
 
 ### Authentication (2)
 - `auth_login` - Login (tenant_id only → browser login form; email/password optional)
@@ -65,6 +65,9 @@ adds a third, `auth_refresh` (refresh an expired token), for a total of 3.
 
 There is no `weekly_report` tool — the backend's weekly-report route is disabled.
 Use `production_summary` or `workorder_dashboard` instead.
+
+The ranking/summary tools, `material_production_ranking`, `workorder_dashboard` and `workorder_report` filter the period on 報工時間
+(operations with a start or finish report in it) unless `time_basis` says otherwise (`op_start`, `op_end`, `planned`); periods are at most 92 days.
 
 ### Cache (4)
 - `workorder_cache_status`, `workorder_cache_download`, `workorder_cache_query`, `workorder_cache_clear`
@@ -122,7 +125,7 @@ Use `production_summary` or `workorder_dashboard` instead.
 | WORK_ORDER_API_URL | Yes | Work Order API base URL |
 | USER_API_URL | No | Auth API URL (has default) |
 
-### SPC (46 tools)
+### SPC (45 tools)
 - Authentication (2): `auth_login`, `auth_status`
 - Measure Config (9): `spc_measure_config_list`, `spc_measure_config_get`, `spc_measure_config_create`, `spc_measure_config_update`, `spc_measure_config_delete`, `spc_measure_config_attachment_add`, `spc_measure_config_attachment_delete`, `spc_measure_config_modes`, `spc_measure_config_categories`
 - Measure History (11): `spc_measure_history_create`, `spc_measure_history_upsert`, `spc_measure_history_update`, `spc_measure_history_delete`, `spc_measure_history_batch_upsert`, `spc_measure_history_batch_delete`, `spc_measure_history_manufacture`, `spc_measure_history_stock`, `spc_measure_history_count`, `spc_measure_history_filter_list`, `spc_measure_history_filter_list_stock`
@@ -132,7 +135,7 @@ Use `production_summary` or `workorder_dashboard` instead.
 - Instruments (5): `spc_instrument_list`, `spc_instrument_create`, `spc_instrument_update`, `spc_instrument_delete`, `spc_instrument_batch_delete`
 - Rules (1): `spc_rule_list`
 - Dashboard (6): `spc_dashboard_list`, `spc_dashboard_create`, `spc_dashboard_update`, `spc_dashboard_delete`, `spc_dashboard_manufacture_create`, `spc_dashboard_manufacture_update`
-- Statistics (2): `spc_statistics_capability_by_point`, `spc_statistics_calculate_result` (`spc_statistics_nelson` / `spc_statistics_capability` / `spc_config_parent_get` were removed 2026-08-13 — their backend calls fail in production)
+- Statistics (1): `spc_statistics_calculate_result` (`spc_statistics_nelson` / `spc_statistics_capability` / `spc_config_parent_get` were removed 2026-08-13 and `spc_statistics_capability_by_point` on 2026-10-14 — their backend calls fail in production)
 
 ### Equipment (12 tools)
 - Authentication (2): `auth_login`, `auth_status`
@@ -188,7 +191,7 @@ Use `production_summary` or `workorder_dashboard` instead.
 
 - `@dotzero.ai/auth-mcp` - Authentication MCP server (3 tools)
 - `@dotzero.ai/work-order-mcp` - Work Order MCP server (103 tools)
-- `@dotzero.ai/spc-mcp` - SPC MCP server (46 tools)
+- `@dotzero.ai/spc-mcp` - SPC MCP server (45 tools)
 - `@dotzero.ai/equipment-mcp` - Equipment monitoring MCP server (12 tools)
 - `@dotzero.ai/device-topology-mcp` - Device topology MCP server (39 tools)
 - `@dotzero.ai/oee-mcp` - OEE MCP server (23 tools)
@@ -198,7 +201,7 @@ Use `production_summary` or `workorder_dashboard` instead.
 - `@dotzero.ai/sd-mcp` - Sales & distribution MCP server (5 tools, read-only)
 - `@dotzero.ai/wms-mcp` - Warehouse MCP server (5 tools, read-only)
 - `@dotzero.ai/dotzero-mcp` - Unified gateway MCP (6 startup tools + dynamic loading;
-  proxies the servers above, so not counted in the 260 total)
+  proxies the servers above, so not counted in the 259 total)
 - `@dotzero.ai/setup` - One-command setup CLI
 
 ## Source
