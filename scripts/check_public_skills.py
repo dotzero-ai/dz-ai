@@ -223,7 +223,8 @@ def check_mcp_add_syntax() -> None:
             bad = []
             if "--command" in rest or "--args" in rest:
                 bad.append("用了不存在的 --command/--args")
-            if " -- " not in rest and not rest.rstrip().endswith(" --"):
+            remote = re.search(r"--transport (http|sse) \S+ https://\S+", rest)  # 雲端 MCP：網址取代 `--` 後的指令
+            if not remote and " -- " not in rest and not rest.rstrip().endswith(" --"):
                 bad.append("缺 `--` 分隔（正確：claude mcp add <name> [-e K=V] -- <cmd> [args]）")
             report(not bad, f"{p.relative_to(REPO)}:{n} " + ("; ".join(bad) or "語法正確"))
     print(f"  → 檢查了 {checked} 條 claude mcp add")
