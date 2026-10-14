@@ -240,7 +240,8 @@ curl -s -X POST "${API_URL}/v1/dashboard/" \
 > ⚠️ **`/v1/statistics/nelson/` 與 `/v1/statistics/capability/` 在 production 不可用**——兩者都轉發給
 > spc-backend 的統計上游（`DZ_SPC_STATISTIC_API`），2026-08-13 實測各打 3 次：nelson 穩定回 500（空 body）、
 > capability 穩定回 503（upstream connect error）。MCP 已因此下架 `spc_statistics_nelson` / `spc_statistics_capability`。
-> `capability-by-point` 打同一個上游，同樣可能不可用。要看失控狀況改用 v3 的
+> `capability-by-point` 打同一個上游，2026-10-14 實測照下方範例參數一律回 400（空 body），MCP 也已下架
+> `spc_statistics_capability_by_point`。要看 Cpk 改用預算結果（Results），要看失控狀況改用 v3 的
 > `GET /v3/count/spcMeasurePointHistory/outOfControl`（見最後一節）。
 
 ### Nelson Rule Analysis
@@ -261,7 +262,7 @@ curl -s "${API_URL}/v1/statistics/capability/?spcMeasurePointConfigUUID=${CONFIG
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-### Capability by Point(即席計算)
+### Capability by Point(即席計算，⚠️ prod 回 400，見上方說明)
 
 不需 config;直接帶原始資料點與規格界限。Query 參數:`points`(逗號分隔)、`USL`、`LSL`、`stdValue`、`measureAmount`。
 
@@ -413,7 +414,7 @@ curl -s -X DELETE "${API_URL}/v2/config/parent/${PARENT_UUID}/attachment/" \
 | Nelson rules（⚠️ prod 回 500，見上方說明） | GET | `/v1/statistics/nelson/` |
 | Nelson by point | GET | `/v1/statistics/nelson-by-point/` |
 | Capability（⚠️ prod 回 503，見上方說明） | GET | `/v1/statistics/capability/` |
-| Capability by point | GET | `/v1/statistics/capability-by-point/` |
+| Capability by point（⚠️ prod 回 400，見上方說明） | GET | `/v1/statistics/capability-by-point/` |
 | Calculate result | GET | `/v1/statisticCalculateResult/` |
 | List rules | GET | `/v1/rule/` |
 

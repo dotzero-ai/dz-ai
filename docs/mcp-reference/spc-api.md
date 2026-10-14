@@ -406,19 +406,6 @@ Update a manufacture dashboard entry.
 
 
 
-#### spc_statistics_capability_by_point
-Calculate process capability from raw data points and spec limits (no config needed).
-
-**Parameters:**
-- `points` (number[], required): Measurement data points
-- `usl` (number, required): Upper specification limit
-- `lsl` (number, required): Lower specification limit
-- `std_value` (number, required): Standard/target value
-- `measure_amount` (number, required): Measurements per sample
-- `good` (number, required): Count of good parts
-- `defect` (number, required): Count of defective parts
-- `response_format` ('markdown'|'json', default: 'markdown')
-
 #### spc_statistics_calculate_result
 Get pre-calculated SPC statistics for a time range and metric (GET /v1/statisticCalculateResult/).
 
@@ -446,14 +433,15 @@ spc_measure_config_create(name: "Dimension A - Length", std_value: 10.0, measure
 # 3. Record measurements
 spc_measure_history_create(spc_measure_point_config_uuid: "config-uuid", values: [10.02], measure_time: "2026-07-21T08:00:00Z")
 
-# 4. Run capability analysis (per measure point)
-spc_statistics_capability_by_point(points: [10.02, 9.98, 10.01], good: 3, defect: 0, lsl: 9.5, usl: 10.5, std_value: 10.0, measure_amount: 1)
+# 4. Read pre-computed Cpk for the last week
+spc_statistics_calculate_result(range: "week", metric_name: "Cpk")
 ```
 
 > `spc_statistics_capability` 與 `spc_statistics_nelson` 已於 2026-08-13 移除：它們轉發給
 > spc-backend 的 `DZ_SPC_STATISTIC_API` 上游，該上游對 production 實測不可達
 > （500 / 503，三次重打結果穩定）。上游恢復後可還原。
-> ⚠️ `spc_statistics_capability_by_point` 打的是同一個上游，很可能同樣不可用。
+> `spc_statistics_capability_by_point` 打同一個上游，2026-10-14 實測照範例參數一律 400（空 body），
+> 也已移除。即時算 Cpk 目前沒有可用的端點，改看 `spc_statistics_calculate_result` 的預算結果。
 
 ### Workflow: Check quality status
 

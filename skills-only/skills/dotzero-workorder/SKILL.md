@@ -354,24 +354,22 @@ curl -s "${API_URL}/v1/workOrderOpHistory/${WORK_ORDER_UUID}/byWorkOrderUuid" \
 
 | 問法模式 | 關鍵概念 | 正確工具 | 時間參數的意義 |
 |---------|---------|---------|--------------|
-| 最近一週「做了」多少/什麼物料 | 實際產出 | `material_production_ranking` | 實際作業時間 |
-| 本月「產量」最高的料號 | 實際產出聚合 | `material_production_ranking` | 實際作業時間 |
-| 今天/本週「有哪些工單」在生產 | 工單排程狀態 | `workorder_list` | 工單計劃開工時間 |
-| 工單「什麼時候開工/完工」 | 工單計劃時間 | `workorder_list` / `workorder_get` | 計劃開工/完工時間 |
+| 最近一週「做了」多少/什麼物料 | 實際產出 | `material_production_ranking` | 報工時間 |
+| 本月「產量」最高的料號 | 實際產出聚合 | `material_production_ranking` | 報工時間 |
+| 今天/本週「有哪些工單」在生產 | 工單排程狀態 | `workorder_list` | 工單實際開工時間 |
+| 工單「什麼時候開工/完工」 | 工單時間 | `workorder_list` / `workorder_get` | 實際開工/完工（預計開工是 `estimated_time`） |
 | 某工單的「生產記錄」/工序 | 子工單明細 | `operation_history_by_workorder` | 不需要時間，直接用 uuid |
-| 「整體」這週做了多少（良品/不良率）| 產出統計 | `production_summary` | 實際作業時間 |
-| 「哪個作業員」最有效率 | 人員效率 | `worker_efficiency_ranking` | 實際作業時間 |
-| 「哪台機台」使用率最高 | 設備稼動 | `device_utilization_ranking` | 實際作業時間 |
-| 完整週報（生產+人員+設備） | 全面報告 | `workorder_dashboard` | 實際作業時間 |
+| 「整體」這週做了多少（良品/不良率）| 產出統計 | `production_summary` | 報工時間 |
+| 「哪個作業員」最有效率 | 人員效率 | `worker_efficiency_ranking` | 報工時間 |
+| 「哪台機台」使用率最高 | 設備稼動 | `device_utilization_ranking` | 報工時間 |
+| 完整週報（生產+人員+設備） | 全面報告 | `workorder_dashboard` | 報工時間 |
 
 **時間概念辨別（核心知識）：**
-- 「做了」「產出」「生產了多少」「哪個物料最多」→ **實際作業時間** → 用 `material_production_ranking` / `production_summary`
-- 「工單」「排程」「計劃」「今天/本週的工單」→ **工單計劃時間** → 用 `workorder_list` 的 `start_time_start/end`
-
-**時間過濾說明**:
-- `material_production_ranking` 使用 `/v1/workOrderOpHistory/` 的 `action=dateRange`，過濾**實際作業時間**與指定範圍重疊的紀錄（包含「進行中→完工」的工單）
-- `workorder_list` / `workorder_report` 的 `start_time_start/end` 篩選的是工單**計劃開工時間**，非實際作業時間
-- **不要**用 `workorder_report` 或 `operation_history_list` 做物料產量聚合 — 前者時間過濾不可靠，後者資料量太大
+- 「做了」「產出」「效率」「稼動」→ **報工時間**：期間內有開工或完工報工的小工單。上表標「報工時間」的工具預設都用這個；
+  使用者指定別的時間時傳 `time_basis`：`op_start`（開工報工）、`op_end`（完工報工）、`planned`（工單預計開工）。
+  後端不支援用**建立時間**篩選，被問到要直接說明。
+- 「工單」「排程」「今天/本週的工單」→ 工單本身的時間 → 用 `workorder_list` 的 `start_time_start/end`
+- 期間最長 92 天；工具會一週一週依序查，不會一次送大查詢。更長的期間請分段問。
 
 ### Material Production Ranking (MCP Only)
 
@@ -384,34 +382,32 @@ material_production_ranking(
 )
 ```
 
-> No curl equivalent — this tool paginates and aggregates server-side via /v1/workOrderOpHistory/.
+> No curl equivalent — the tool queries /v1/workOrderReport/ one week at a time and aggregates locally.
 
 ### Work Order Report (curl fallback — raw records only)
 
-> **WARNING**: `/v1/workOrderReport/` time filter (`startTimeStart/End`) filters by **scheduled start time of the work order**, not actual operation time. Results may include records outside the intended period. Use `material_production_ranking` MCP tool for accurate material production queries.
-
 ```bash
-curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-01T00:00:00Z&startTimeEnd=2024-01-31T23:59:59Z&limit=50" \
+# 報工時間 = 兩次查詢取聯集：開工報工在期間內 + 完工報工在期間內（以 uuid 去重）
+curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2026-10-01T00:00:00%2B08:00&startTimeEnd=2026-10-07T23:59:59%2B08:00" \
+  -H "Authorization: Bearer ${TOKEN}"
+curl -s "${API_URL}/v1/workOrderReport/?endTimeStart=2026-10-01T00:00:00%2B08:00&endTimeEnd=2026-10-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-**Query Parameters**:
-- `startTimeStart` / `startTimeEnd` (ISO 8601, must pair): Work order scheduled start time range (not operation time)
+**Query Parameters**（篩選的是小工單本身的時間，原始碼 work-order-api `ResolveWorkOrderQueryDate3`）:
+- `startTimeStart` / `startTimeEnd` (ISO 8601, must pair): 小工單**開工報工**時間（`work_order_op_history.start_time`）
+- `endTimeStart` / `endTimeEnd` (ISO 8601, must pair): 小工單**完工報工**時間（`work_order_op_history.end_time`）
+- `estimatedStart` / `estimatedEnd`: 工單**預計開工**時間
 - `workOrderID` (string): Filter by work order
 - `deviceUUID` (string): Filter by device
 - `status` (number): Filter by status
 
-**No pagination**: this endpoint ignores `limit`/`start` and returns ALL matching records (grouped by status). Always pass a `startTimeStart`/`startTimeEnd` range to bound the response. (The `workorder_report` MCP tool truncates client-side; raw curl has no such guard.)
+**Response**: `{ "not_start": {"total", "data"}, "start": {...}, "done": {...}, "other": {...} }`——依狀態分組，要把四組的 `data` 合起來。
 
-### Operation History with Date Range (actual operation time filter)
+**No pagination**: this endpoint ignores `limit`/`start` and returns ALL matching records. **Never call it without a time range or `workOrderID`**: unfiltered it scans the whole history (2026-10-14 this stalled the production work-order API for about 25 minutes). Keep each query to about a week and run them one after another.
 
-```bash
-# Fetch operations that overlapped with the specified time range (includes in-progress → completed)
-curl -s "${API_URL}/v1/workOrderOpHistory/?action=dateRange&startTime=2026-02-25T00:00:00%2B08:00&endTime=2026-03-04T23:59:59%2B08:00&limit=100" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-This is the correct endpoint for "production during this week" — uses actual operation time overlap.
+> `/v1/workOrderOpHistory/?action=dateRange` 不適合做統計：它還會帶回「工單預計開工落在期間內」但期間內沒有報工的小工單，
+> 而且每列會重複（後端 JOIN product 造成，實測約 2 倍），也不吃 limit／workOrderID 參數。
 
 ---
 

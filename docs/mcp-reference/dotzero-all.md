@@ -87,7 +87,7 @@ Manage measurement configurations, record inspection data, calculate control cha
 
 - **MCP Server**: `@dotzero.ai/spc-mcp`
 - **Reference**: [spc-api](./spc-api.md)
-- **Tools**: 46
+- **Tools**: 45
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -100,7 +100,7 @@ Manage measurement configurations, record inspection data, calculate control cha
 | Instruments V1 | 5 | `spc_instrument_list`, `spc_instrument_create`, `spc_instrument_update`, `spc_instrument_delete`, `spc_instrument_batch_delete` |
 | Rules V1 | 1 | `spc_rule_list` |
 | Dashboard V1 | 6 | `spc_dashboard_list`, `spc_dashboard_create`, `spc_dashboard_update`, `spc_dashboard_delete`, `spc_dashboard_manufacture_create`, `spc_dashboard_manufacture_update` |
-| Statistics V1 | 2 | `spc_statistics_capability_by_point`, `spc_statistics_calculate_result` |
+| Statistics V1 | 1 | `spc_statistics_calculate_result` |
 
 ---
 
@@ -280,7 +280,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 |------------|-------|
 | auth-mcp | 3 |
 | work-order-mcp | 103 |
-| spc-mcp | 46 |
+| spc-mcp | 45 |
 | equipment-mcp | 12 |
 | device-topology-mcp | 39 |
 | oee-mcp | 23 |
@@ -289,7 +289,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | scm-mcp | 6 |
 | sd-mcp | 5 |
 | wms-mcp | 5 |
-| **Total (11 service servers)** | **260** |
+| **Total (11 service servers)** | **259** |
 | dotzero-mcp (gateway) | 6 startup tools + dynamic loading (代理上面那些，不計入總數) |
 
 ---

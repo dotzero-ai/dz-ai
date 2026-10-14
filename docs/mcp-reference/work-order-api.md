@@ -316,13 +316,16 @@ Get all operation history for a specific work order.
 Get work order operation report with filters.
 
 **Parameters:**
-- `start_time_start` (string, optional): Report period start (ISO 8601)
-- `start_time_end` (string, optional): Report period end (ISO 8601)
+- `start_time_start` (string, optional): Period start (ISO 8601, paired, at most 92 days)
+- `start_time_end` (string, optional): Period end (ISO 8601)
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
 - `work_order_id` (string, optional): Filter by work order ID
 - `device_uuid` (string, optional): Filter by device UUID
-- `limit` (number, default: 50): Max results (1-100). NOTE: the backend does not paginate this endpoint — it returns all matching records; limit/offset are applied client-side (truncation) by the MCP tool. Always pass a time range to keep the result manageable.
+- `limit` (number, default: 50): Max results (1-100). The backend does not paginate this endpoint; limit/offset are applied by the MCP tool.
 - `offset` (number, default: 0): Client-side skip for pagination.
 - `response_format` ('markdown'|'json', default: 'markdown')
+
+**Requires** a period or a `work_order_id` (refused otherwise: unfiltered, the backend scans the whole history).
 
 **Returns:** Operation report data (individual WorkOrderOpHistory records)
 
@@ -350,19 +353,21 @@ ONE-CALL composite dashboard covering all work-order metrics for a period (repla
 - `start_time_start` (string, **required**): Period start (ISO 8601, paired)
 - `start_time_end` (string, **required**): Period end (ISO 8601, paired)
 - `work_order_id` (string, optional): Filter to a specific work order ID
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
 - `top_n` (number, default: 5): Rows in worker/device rankings (1-20)
 - `sections` (string[], default: all): Any of `summary`, `status`, `production`, `workers`, `devices`
 
 **Returns:** Combined KPIs, status distribution, production table, top-N worker/device rankings (~2KB)
 
 #### material_production_ranking
-Rank materials (物料/料號) by good parts produced within a period. Filters by ACTUAL operation time (action=dateRange on workOrderOpHistory), so it reflects what was actually produced. Use for "做最多的物料"/"最多產量的料號"/"top materials".
+Rank materials (物料/料號) by good parts produced within a period. Filters by 報工時間 by default (see `time_basis`), so it reflects what was actually produced. Use for "做最多的物料"/"最多產量的料號"/"top materials".
 
 **Parameters:**
-- `start_time_start` (string, **required**): Actual-operation period start (ISO 8601 with +08:00)
-- `start_time_end` (string, **required**): Actual-operation period end (ISO 8601 with +08:00)
+- `start_time_start` (string, **required**): Period start (ISO 8601 with +08:00, at most 92 days)
+- `start_time_end` (string, **required**): Period end (ISO 8601 with +08:00)
 - `top_n` (number, default: 10): Materials to show (1-50)
 - `work_order_id` (string, optional): Filter to a specific work order ID
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
 
 **Returns:** Ranked materials with ops/qty/good/defect
 
@@ -388,9 +393,10 @@ Get work order report analytics.
 Rank workers by production efficiency (good parts per hour). Returns a compact ranked table.
 
 **Parameters:**
-- `start_time_start` (string, required): Period start (ISO 8601)
+- `start_time_start` (string, required): Period start (ISO 8601, at most 92 days)
 - `start_time_end` (string, required): Period end (ISO 8601)
 - `work_order_id` (string, optional): Filter to specific work order
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
 - `top_n` (number, default: 10): Number of workers to show (1-50)
 
 **Returns:** Markdown table with columns: Rank, Worker, ID, Ops, Qty, Good, Defect, Good Rate, Hours, Good/Hr
@@ -408,9 +414,10 @@ worker_efficiency_ranking(
 Rank devices/machines by utilization (total hours used). Returns a compact ranked table.
 
 **Parameters:**
-- `start_time_start` (string, required): Period start (ISO 8601)
+- `start_time_start` (string, required): Period start (ISO 8601, at most 92 days)
 - `start_time_end` (string, required): Period end (ISO 8601)
 - `work_order_id` (string, optional): Filter to specific work order
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
 - `top_n` (number, default: 10): Number of devices to show (1-50)
 
 **Returns:** Markdown table with columns: Rank, Device, Ops, Qty, Good, Defect, Good Rate, Hours, Good/Hr
@@ -427,9 +434,10 @@ device_utilization_ranking(
 Summarize production output with aggregated metrics. Returns a compact summary table.
 
 **Parameters:**
-- `start_time_start` (string, required): Period start (ISO 8601)
+- `start_time_start` (string, required): Period start (ISO 8601, at most 92 days)
 - `start_time_end` (string, required): Period end (ISO 8601)
 - `work_order_id` (string, optional): Filter to specific work order
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
 - `group_by` (string, default: "overall"): Group by "overall", "work_order", or "operation"
 
 **Returns:** Markdown table with columns: [Group], Ops, Qty, Good, Defect, Defect Rate, Hours, Good/Hr
