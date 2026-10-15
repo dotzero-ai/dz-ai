@@ -26,10 +26,10 @@ workorder_list(status: 2, limit: 20)
 
 | 用戶問題類型 | 正確工具 | 不要用 |
 |-------------|---------|---------|
-| 本週/本月工單狀況、儀表板 | `workorder_dashboard(start_time_start, start_time_end)` | ~~workorder_list~~ |
-| 各狀態工單統計 | `analytics_workorder_report` | ~~workorder_list~~ |
+| 本週/本月工單狀況、儀表板 | `workorder_dashboard(start_time_start, start_time_end)`（期間 ≤ 92 天） | ~~workorder_list~~ |
+| 各狀態工單統計 | `workorder_count(status?, start_time_start, start_time_end)`（一次回 not_start / in_progress / done） | ~~workorder_list~~、~~analytics_workorder_report~~（那是期間內完工的小工單原始列，不是統計） |
 | 工單週報 | `workorder_dashboard(start_time_start, start_time_end)` | ~~weekly_report（後端已停用）~~ |
-| 純計數（有幾張） | `workorder_count(status?)` | ~~workorder_list~~ |
+| 純計數（有幾張） | `workorder_count(status, start_time_start, start_time_end)`（≤ 92 天）；只有問「目前進行中／待開工」（status 2／1）才不帶時間 | ~~workorder_list~~ |
 | 查看特定工單清單 | `workorder_list(limit≤10, fields=[...], format=markdown)` | ~~format=json, limit>10~~ |
 | 單筆工單詳細 | `workorder_get(uuid)` | — |
 
@@ -74,28 +74,31 @@ Every `curl` example below assumes `$API_URL` and `$TOKEN` come from there.
 | 篩選範圍 | 必須同時提供 | 適用端點 |
 |----------|-------------|---------|
 | Start Time | `startTimeStart` + `startTimeEnd` | workOrders, workOrderReport |
-| End Time | `endTimeStart` + `endTimeEnd` | workOrders |
+| End Time | `endTimeStart` + `endTimeEnd` | workOrders, workOrderReport |
 | Deadline | `deadlineTimeStart` + `deadlineTimeEnd` | workOrders |
-| Date Range | `action=dateRange` + `startTime` + `endTime` | workOrderOpHistory |
+| Period | `startTime` + `endTime`（≤ 7 天） | analytics/operations, analytics/workOrderReport |
 
 所有時間參數格式為 ISO 8601，例如：`2026-01-24T00:00:00Z`
+
+**不分頁的端點**（`/v1/workOrderReport/`、`/v1/analytics/*`）一次回整段：**絕不要不帶時間範圍呼叫**，每次最多 7 天、一段一段依序查（不要平行）。
+**逾時或 5xx 不要重送同一發**——後端可能還在算，重送只會把同一份查詢再排一次；縮短期間或加 `workOrderID` 後再查一次。
 
 ### ⚠ 每個時間欄位的語意不同——「這個月完成幾張」有四個答案
 
 | 參數 | 篩的是 | 2026-08-01~08-21 且 status=已完成 |
 |------|--------|-----------------------------------|
-| `startTimeStart/End` | **排程開工日**（工單計畫何時開始做） | **247** |
-| `endTimeStart/End` | **計劃完工日**（工單計畫何時做完） | **377** |
+| `startTimeStart/End` | **實際開工日**（第一道工序報開工；未開工的單此欄為空） | **247** |
+| `endTimeStart/End` | **實際完工日**（最後一道工序報完工；未完工的單為零值 0001-01-01） | **377** |
 | `deadlineTimeStart/End` | **交期**（答應客戶的日子） | — |
-| `workOrderOpHistory` 的 `dateRange` | **報工時間**（現場實際回報的時點） | 452 |
+| `workOrderOpHistory` 的 `dateRange` | **報工時間**，外加工單預計開工落在期間內的小工單；每列約重複 2 倍（⚠ 不論期間都掃整個租戶，別再用） | 452 |
 | **不帶任何時間參數** | 全部歷史 | **48,619** ← 最容易誤用的一個 |
 
-（2026-08-21 對同一租戶實測；`analytics_workorder_report` 的 `status_counts` 是報工口徑。）
+（2026-08-21 對同一租戶實測。）
 
 **所以**：回答「這個月／本週完成幾張」時，(1) 一定要帶時間參數——不帶會拿到全部歷史的
-數字；(2) 要在答案裡**講明用的是哪一種口徑**（「以計劃完工日計，8 月共 377 張」），
-因為使用者心裡想的那一種可能不是你選的那一種。`workorder_count` 同樣吃這些日期參數，
-1.5.0 起還會一併回 `not_start / in_progress / done` 的張數分佈。
+數字；(2) 要在答案裡**講明用的是哪一種口徑**（「以實際完工日計，8 月共 377 張」），
+因為使用者心裡想的那一種可能不是你選的那一種。`workorder_count` 只吃實際開工
+（`start_time_start/end`，≤ 92 天；status 不是 1、2 時必帶），並一併回 `not_start / in_progress / done` 的張數分佈。
 
 **正確用法**:
 ```bash
@@ -319,21 +322,13 @@ curl -s "${API_URL}/v1/workOrderOpHistory/?limit=20" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
-**Query Parameters** — this endpoint supports ONLY two modes:
-- **Date range**: `action=dateRange` + `startTime` / `endTime` (ISO 8601, must pair). Returns ALL records in the range (no pagination — `limit`/`start` are ignored in this mode).
-- **Plain pagination**: `limit`, `start` (only when `action` is not `dateRange`).
+**Query Parameters** — use this endpoint for **plain pagination only**: `limit`, `start`.
+
+- ⚠ **Do not use `action=dateRange`** (`startTime` / `endTime`): whatever the period, it scans the whole tenant, ignores `limit`/`start`/`workOrderID`, returns every row about twice, and also returns operations whose work order's *estimated* start falls in the range. For operations in a period use `GET /v1/workOrderReport/` with a ≤ 7-day pair (see **Work Order Report** under Reports).
 
 The endpoint does **not** support `workOrderID` / `deviceUUID` / `status` filters — the handler never reads them, so they are silently ignored (you get unfiltered results).
 - To filter by a work order, use `GET /v1/workOrderOpHistory/{uuid}/byWorkOrderUuid`.
-- To filter by device/status, use `GET /v1/workOrderReport/` (supports `workOrderID`/`deviceUUID`/`status`).
-
-**Note**: This endpoint uses `startTime`/`endTime` (not `startTimeStart`/`startTimeEnd` like workOrders).
-
-**Example - Filter by date range**:
-```bash
-curl -s "${API_URL}/v1/workOrderOpHistory/?action=dateRange&startTime=2026-01-24T00:00:00Z&endTime=2026-02-07T23:59:59Z&limit=20" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
+- To filter by device/status, use `GET /v1/workOrderReport/` **together with a `startTimeStart`/`startTimeEnd` (or `endTimeStart`/`endTimeEnd`) pair of 7 days or less** — `deviceUUID` or `status` alone returns that device's/status's whole history in one unpaginated response.
 
 ### Get Operations for Work Order
 
@@ -369,7 +364,10 @@ curl -s "${API_URL}/v1/workOrderOpHistory/${WORK_ORDER_UUID}/byWorkOrderUuid" \
   使用者指定別的時間時傳 `time_basis`：`op_start`（開工報工）、`op_end`（完工報工）、`planned`（工單預計開工）。
   後端不支援用**建立時間**篩選，被問到要直接說明。
 - 「工單」「排程」「今天/本週的工單」→ 工單本身的時間 → 用 `workorder_list` 的 `start_time_start/end`
-- 期間最長 92 天；工具會一週一週依序查，不會一次送大查詢。更長的期間請分段問。
+- 期間最長 92 天；工具會一週一週依序查，不會一次送大查詢，查超過 60 秒就停下並回報。更長的期間先問使用者要哪一段；真的要更長就一段一段依序查，不要平行。
+- `time_basis: planned`（工單預計開工）一定要帶 `work_order_id`，不帶會被拒絕（後端的預計時間篩選不論期間都掃整個租戶）。
+- `analytics_operations`（完工小工單的標準工時統計）與 `analytics_workorder_report`（完工小工單原始列）期間最多 **7 天**，依完工報工時間篩、不吃 `work_order_id`；狀態張數請用 `workorder_count`。
+- 工具回「逾時」或伺服器錯誤時**不要重送同一發**：後端可能還在算。縮短期間或加 `work_order_id` 再查一次。
 
 ### Material Production Ranking (MCP Only)
 
@@ -397,17 +395,20 @@ curl -s "${API_URL}/v1/workOrderReport/?endTimeStart=2026-10-01T00:00:00%2B08:00
 **Query Parameters**（篩選的是小工單本身的時間，原始碼 work-order-api `ResolveWorkOrderQueryDate3`）:
 - `startTimeStart` / `startTimeEnd` (ISO 8601, must pair): 小工單**開工報工**時間（`work_order_op_history.start_time`）
 - `endTimeStart` / `endTimeEnd` (ISO 8601, must pair): 小工單**完工報工**時間（`work_order_op_history.end_time`）
-- `estimatedStart` / `estimatedEnd`: 工單**預計開工**時間
-- `workOrderID` (string): Filter by work order
-- `deviceUUID` (string): Filter by device
-- `status` (number): Filter by status
+- `estimatedStart` / `estimatedEnd`: 工單**預計開工**時間——⚠ 不論期間都掃整個租戶的歷史，不要用；要看某張單的預計開工就帶 `workOrderID` 查回來自己比對
+- `workOrderID` (string): Filter by work order（單張工單是一次有索引的查詢，可不帶時間）
+- `deviceUUID` (string): Filter by device — only together with a ≤ 7-day time pair
+- `status` (number): Filter by status — only together with a ≤ 7-day time pair
 
 **Response**: `{ "not_start": {"total", "data"}, "start": {...}, "done": {...}, "other": {...} }`——依狀態分組，要把四組的 `data` 合起來。
 
-**No pagination**: this endpoint ignores `limit`/`start` and returns ALL matching records. **Never call it without a time range or `workOrderID`**: unfiltered it scans the whole history (2026-10-14 this stalled the production work-order API for about 25 minutes). Keep each query to about a week and run them one after another.
+**No pagination**: this endpoint ignores `limit`/`start` and returns ALL matching records. **Never call it without a time range or `workOrderID`**: unfiltered it scans the whole history and keeps running long after the client times out. Keep each query to 7 days or less and run them one after another, never in parallel. **If a query times out or returns 5xx, do not resend it**: the server may still be running it. Narrow the period or add `workOrderID`, then try once.
 
-> `/v1/workOrderOpHistory/?action=dateRange` 不適合做統計：它還會帶回「工單預計開工落在期間內」但期間內沒有報工的小工單，
+> `/v1/workOrderOpHistory/?action=dateRange` 不要拿來查期間：不論期間都會掃整個租戶；它還會帶回「工單預計開工落在期間內」但期間內沒有報工的小工單，
 > 而且每列會重複（後端 JOIN product 造成，實測約 2 倍），也不吃 limit／workOrderID 參數。
+
+`/v1/analytics/operations` 與 `/v1/analytics/workOrderReport` 只吃 `startTime` / `endTime`（依完工報工時間），**一律帶、最多 7 天**——
+不帶時後端自動查最近 3 個月，一定逾時；兩支都不吃 `workOrderID`。參數細節見 [references/endpoints.md](references/endpoints.md)。
 
 ---
 
@@ -417,7 +418,7 @@ curl -s "${API_URL}/v1/workOrderReport/?endTimeStart=2026-10-01T00:00:00%2B08:00
 
 ```bash
 # 1. List in-progress work orders
-curl -s "${API_URL}/v1/workOrders/?status=2" \
+curl -s "${API_URL}/v1/workOrders/?status=2&limit=20" \
   -H "Authorization: Bearer ${TOKEN}"
 
 # 2. Get details for specific order (work_order_id must be a string array)
@@ -456,8 +457,8 @@ curl -s -X POST "${API_URL}/v1/workOrders/" \
 ### Workflow: Weekly Production Report
 
 ```bash
-# Get operations for this week
-curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-15T00:00:00Z&startTimeEnd=2024-01-21T23:59:59Z&limit=100" \
+# Get operations for this week — no pagination (limit is ignored); 報工時間 = 開工/完工兩次查詢取聯集，見上方 Work Order Report
+curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-15T00:00:00%2B08:00&startTimeEnd=2024-01-21T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -472,6 +473,7 @@ curl -s "${API_URL}/v1/workOrderReport/?startTimeStart=2024-01-15T00:00:00Z&star
 | 404 | Resource not found | Verify UUID or ID |
 | 422 | Validation error | Check input parameters |
 | 429 | Rate limited | Wait before retrying |
+| 500 / 502 / 503 / 504 / timeout | Range too wide; the server may keep running the query after you disconnect | Do **not** resend the same call. Narrow it to ≤ 7 days or add `workOrderID`, then try once |
 
 On 401 the token has expired — refresh and retry; see
 **[references/curl-fallback.md](references/curl-fallback.md)**.

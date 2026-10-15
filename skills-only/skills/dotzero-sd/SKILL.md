@@ -35,11 +35,13 @@ TOKEN=$(jq -r .token "$DZ/credentials.json")
 
 ### List Sales Orders
 
-銷售訂單清單。`query` 決定過濾模式：`all`（全部，不帶其他過濾）、`exact`（精確比對）、`fuzzy`（模糊比對）。**`query` 為必填、無預設**，省略或給其他值會回 400。
+銷售訂單清單。`query` 決定過濾模式：`all`（不接受任何過濾，只能分頁瀏覽）、`exact`（精確比對）、`fuzzy`（模糊比對）。**`query` 為必填、無預設**，省略或給其他值會回 400。期間問題（如本月要交貨的訂單）用 `exact` + 交貨日或建立時間區間，不要用 `all` 翻完全部再自己挑。
+
+> ⚠️ 一律帶 `limit`（≤ 100，後端不設上限）；期間問題帶區間（≤ 31 天），不要用一大段區間一次撈。遇到逾時或 5xx **不要重送同一個請求**——後端可能還在跑那個查詢，請縮小區間或加過濾條件再查。
 
 ```bash
-# 全部訂單（前 20 筆）
-curl -s "${API_URL}/order?query=all&limit=20" \
+# 期間問題：exact + 交貨日區間（RFC3339，≤ 31 天）
+curl -s "${API_URL}/order?query=exact&deliveryDateFrom=2026-07-01T00:00:00Z&deliveryDateTo=2026-07-31T23:59:59Z&limit=20" \
   -H "Authorization: Bearer ${TOKEN}"
 
 # 精確過濾（依客戶編號 + 狀態）
@@ -50,6 +52,10 @@ curl -s "${API_URL}/order?query=exact&sdCustomerNumber=C0001&status=confirmed&li
 curl -s "${API_URL}/order?query=fuzzy&sdCustomerName=Acme&limit=20" \
   -H "Authorization: Bearer ${TOKEN}" \
   | jq '.data[] | {uuid, number, sdCustomerName, status, totalAmount, deliveryDate}'
+
+# 只分頁瀏覽（all 不接受任何過濾；前 20 筆）
+curl -s "${API_URL}/order?query=all&limit=20" \
+  -H "Authorization: Bearer ${TOKEN}"
 ```
 
 **Query 參數**:
@@ -73,7 +79,7 @@ curl -s "${API_URL}/order?query=fuzzy&sdCustomerName=Acme&limit=20" \
 | `totalAmountFrom` / `totalAmountTo` | 總金額起迄（含），十進位數字 | exact / fuzzy |
 | `priorityFrom` / `priorityTo` | 優先度起迄（含），整數 | exact / fuzzy |
 | `offset` | 分頁位移（預設 0） | 全部 |
-| `limit` | 每頁筆數（預設 20） | 全部 |
+| `limit` | 每頁筆數（預設 20；後端不設上限，請保持 ≤ 100） | 全部 |
 | `orderBy` | 排序欄位，僅限 `createTime` / `updateTime` / `number` / `deliveryDate` / `totalAmount` / `priority`（預設 `createTime`，其他值回 400） | 全部 |
 | `order` | 排序方向 `asc` / `desc`（預設 `desc`） | 全部 |
 
@@ -117,10 +123,10 @@ curl -s "${API_URL}/item/status" -H "Authorization: Bearer ${TOKEN}"
 
 ### List Customers
 
-客戶清單。`query` 過濾模式同 Order（`all` / `exact` / `fuzzy`），**必填、無預設**。
+客戶清單。`query` 過濾模式同 Order（`all` / `exact` / `fuzzy`），**必填、無預設**。期間問題（如本月新增的客戶）用 `exact` + `createTimeFrom` / `createTimeTo`。
 
 ```bash
-# 全部客戶（前 20 筆）
+# 只分頁瀏覽（all 不接受任何過濾；前 20 筆）
 curl -s "${API_URL}/customer?query=all&limit=20" \
   -H "Authorization: Bearer ${TOKEN}"
 
@@ -146,7 +152,7 @@ curl -s "${API_URL}/customer?query=exact&isActive=true&limit=50" \
 | `createTimeFrom` / `createTimeTo` | 建立時間起迄（含），RFC3339 | exact / fuzzy |
 | `updateTimeFrom` / `updateTimeTo` | 更新時間起迄（含），RFC3339 | exact / fuzzy |
 | `offset` | 分頁位移（預設 0） | 全部 |
-| `limit` | 每頁筆數（預設 20） | 全部 |
+| `limit` | 每頁筆數（預設 20；後端不設上限，請保持 ≤ 100） | 全部 |
 | `orderBy` | 排序欄位，僅限 `name` / `number` / `createTime` / `updateTime`（預設 `createTime`，其他值回 400） | 全部 |
 | `order` | 排序方向 `asc` / `desc`（預設 `desc`） | 全部 |
 
@@ -193,3 +199,4 @@ curl -s "${API_URL}/customer/${CUSTOMER_UUID}" \
 | 403 | Permission denied | Check user permissions |
 | 404 | Resource not found | Verify UUID (order/{uuid}、customer/{uuid} 只接受 UUID，非業務編號) |
 | 400 | Validation error | 檢查：query 模式（必填 all/exact/fuzzy）、query=all 不可帶過濾、exact/fuzzy 至少一個過濾條件、時間為 RFC3339、orderBy 白名單、limit/offset 為合法整數 |
+| 5xx / 逾時 | 查詢範圍太大，後端可能仍在執行 | **不要重送同一個請求**；縮小日期區間、加客戶 / 訂單過濾或調小 `limit` 後再查 |

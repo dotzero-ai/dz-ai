@@ -1,6 +1,6 @@
 {
   "name": "dotzero",
-  "version": "2.0.22",
+  "version": "2.0.23",
   "description": "DotZero MES — work orders, SPC, equipment, device topology, OEE, SCM, SD, WMS, GDT (MCP servers + skills)",
   "contextFileName": "GEMINI.md",
   "mcpServers": {

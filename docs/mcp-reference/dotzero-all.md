@@ -49,11 +49,11 @@ Centralized authentication for all DotZero services.
 
 ### Work Order API
 
-Manage work orders, products, workers, routes, operations, devices, quality, warehouse, and WMS in manufacturing execution systems (MES).
+Manage work orders, products, workers, routes, operations, devices, quality, and warehouse in manufacturing execution systems (MES). Stock queries are in the WMS API below.
 
 - **MCP Server**: `@dotzero.ai/work-order-mcp`
 - **Reference**: [work-order-api](./work-order-api.md)
-- **Tools**: 103
+- **Tools**: 99
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -76,7 +76,6 @@ Manage work orders, products, workers, routes, operations, devices, quality, war
 | Warehouses | 4 | `warehouse_list`, `warehouse_get`, `warehouse_create`, `warehouse_update` |
 | Warehouse Storage | 4 | `warehouse_storage_list`, `warehouse_storage_get`, `warehouse_storage_create`, `warehouse_storage_update` |
 | Product Storage | 3 | `product_storage_list`, `product_storage_get`, `product_storage_by_product` |
-| WMS | 4 | `wms_check_inventory`, `wms_query_product_storage`, `wms_query_storage_history`, `wms_minimal_stock_count` |
 | Cache | 4 | `workorder_cache_status`, `workorder_cache_download`, `workorder_cache_query`, `workorder_cache_clear` — local SQL cache of work-order data |
 
 ---
@@ -279,7 +278,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | MCP Server | Tools |
 |------------|-------|
 | auth-mcp | 3 |
-| work-order-mcp | 103 |
+| work-order-mcp | 99 |
 | spc-mcp | 45 |
 | equipment-mcp | 12 |
 | device-topology-mcp | 39 |
@@ -289,7 +288,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | scm-mcp | 6 |
 | sd-mcp | 5 |
 | wms-mcp | 5 |
-| **Total (11 service servers)** | **259** |
+| **Total (11 service servers)** | **255** |
 | dotzero-mcp (gateway) | 6 startup tools + dynamic loading (代理上面那些，不計入總數) |
 
 ---
@@ -450,7 +449,7 @@ workorder_details(work_order_id: "WO-001")
 
 **Check factory OEE:**
 ```
-oee_factory(factory_uuid: "uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_factory(factory_uuid: "uuid", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 ```
 
 **Monitor equipment:**
@@ -462,7 +461,7 @@ equip_machine_status_realtime_batch(device_uuids: "dev-1,dev-2")
 **Analyze SPC quality:**
 ```
 spc_measure_config_list()
-spc_statistics_capability(spc_measure_point_config_uuid: "config-uuid")
+spc_measure_history_manufacture(spc_measure_point_config_uuid: "config-uuid", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 ```
 
 **Explore topology:**
@@ -478,6 +477,7 @@ topo_device_list(line_uuid: "line-uuid")
 | 401 Unauthorized | Call `auth_login` with tenant_id |
 | Token expired | Call `auth_refresh` with refresh_token |
 | Tenant not found | Verify tenant_id with user |
+| Timeout or 5xx | The server may still be computing: do not resend the same call. Narrow the period or add a filter (an identical request is refused for 2 minutes after it timed out) |
 
 ---
 

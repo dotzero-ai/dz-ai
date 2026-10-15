@@ -126,6 +126,8 @@ curl -s "${API_URL}/v1/config/category/" \
 
 ## Measure History Operations (V1)
 
+> 歷史類查詢一律帶量測點，能帶時間區間的就帶（RFC3339 帶時區偏移，如 `2026-03-01T00:00:00+08:00`，query string 裡 `+` 寫成 `%2B`），不要不帶區間撈全部；逾時或 5xx 不要重送同一個請求（伺服器可能還在跑那個查詢），改縮短區間或加篩選。
+
 ### Create Measurement
 
 ```bash
@@ -142,19 +144,19 @@ curl -s -X POST "${API_URL}/v1/history/" \
 
 回傳某量測點在指定維度上的 distinct 值(工單 / 作業員 / 儀器 / 設備)。`filterType` 為必填 path 參數,可選:`workOrderOpHistoryWorker`、`workOrderOpHistory`、`spcMeasureInstrument`、`device`、`spcMeasureWorker`。
 
-Query 參數:`spcMeasurePointConfigUUID`(必填)、`workOrderOpHistoryUUID`(選填)、`workOrderOpHistoryStartTime` / `workOrderOpHistoryEndTime`(選填,RFC3339)。
+Query 參數:`spcMeasurePointConfigUUID`(必填)、`workOrderOpHistoryUUID`(選填)、`workOrderOpHistoryStartTime` / `workOrderOpHistoryEndTime`(選填,RFC3339)；實務上一律帶 `workOrderOpHistoryStartTime` / `workOrderOpHistoryEndTime`（≤ 31 天），不帶會掃該量測點全部歷史。
 
 ```bash
-curl -s "${API_URL}/v1/history/filter-list/workOrderOpHistory/?spcMeasurePointConfigUUID=${CONFIG_UUID}" \
+curl -s "${API_URL}/v1/history/filter-list/workOrderOpHistory/?spcMeasurePointConfigUUID=${CONFIG_UUID}&workOrderOpHistoryStartTime=2026-03-01T00:00:00%2B08:00&workOrderOpHistoryEndTime=2026-03-31T00:00:00%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Filter List (Stock)
 
-`filterType` 可選:`warehouse`、`serialNumber`、`workOrderID`、`productStorageHistoryWorker`、`spcMeasureWorker`、`productStorageHistoryUUID`。Query 參數:`spcMeasurePointConfigUUID`(必填)、`productStorageHistoryUUID`、`productStorageHistoryStartTime` / `productStorageHistoryEndTime`(RFC3339)。
+`filterType` 可選:`warehouse`、`serialNumber`、`workOrderID`、`productStorageHistoryWorker`、`spcMeasureWorker`、`productStorageHistoryUUID`。Query 參數:`spcMeasurePointConfigUUID`(必填)、`productStorageHistoryUUID`、`productStorageHistoryStartTime` / `productStorageHistoryEndTime`(RFC3339)；同樣一律帶時間區間（≤ 31 天）。
 
 ```bash
-curl -s "${API_URL}/v1/history/filter-list/warehouse/stock/?spcMeasurePointConfigUUID=${CONFIG_UUID}" \
+curl -s "${API_URL}/v1/history/filter-list/warehouse/stock/?spcMeasurePointConfigUUID=${CONFIG_UUID}&productStorageHistoryStartTime=2026-03-01T00:00:00%2B08:00&productStorageHistoryEndTime=2026-03-31T00:00:00%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -240,40 +242,15 @@ curl -s -X POST "${API_URL}/v1/dashboard/" \
 > ⚠️ **`/v1/statistics/nelson/` 與 `/v1/statistics/capability/` 在 production 不可用**——兩者都轉發給
 > spc-backend 的統計上游（`DZ_SPC_STATISTIC_API`），2026-08-13 實測各打 3 次：nelson 穩定回 500（空 body）、
 > capability 穩定回 503（upstream connect error）。MCP 已因此下架 `spc_statistics_nelson` / `spc_statistics_capability`。
-> `capability-by-point` 打同一個上游，2026-10-14 實測照下方範例參數一律回 400（空 body），MCP 也已下架
-> `spc_statistics_capability_by_point`。要看 Cpk 改用預算結果（Results），要看失控狀況改用 v3 的
+> `capability-by-point` 打同一個上游，實測一律回 400（空 body），MCP 也已下架
+> `spc_statistics_capability_by_point`。要看 Cpk 改用下方 Calculate Results（非唯讀，見該節），要看失控狀況改用 v3 的
 > `GET /v3/count/spcMeasurePointHistory/outOfControl`（見最後一節）。
 
-### Nelson Rule Analysis
+### Calculate Results
 
-**必填 query 參數**(缺任一即 400):`spcMeasurePointConfigUUID`、`workOrderOpHistoryUUID`、`startTime`、`endTime`(後兩者為 RFC3339,且 `startTime <= endTime`)。
+⚠️ **不是唯讀**：每次呼叫都會對整個租戶的每個量測點重算該指標並寫回結果，再回前 `limit` 筆。用最短的 `range`，同樣的呼叫不要重複打。
 
-```bash
-curl -s "${API_URL}/v1/statistics/nelson/?spcMeasurePointConfigUUID=${CONFIG_UUID}&workOrderOpHistoryUUID=${WO_UUID}&startTime=2026-07-01T00:00:00Z&endTime=2026-07-21T23:59:59Z" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-### Process Capability (Cp, Cpk)
-
-必填參數同 Nelson。
-
-```bash
-curl -s "${API_URL}/v1/statistics/capability/?spcMeasurePointConfigUUID=${CONFIG_UUID}&workOrderOpHistoryUUID=${WO_UUID}&startTime=2026-07-01T00:00:00Z&endTime=2026-07-21T23:59:59Z" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-### Capability by Point(即席計算，⚠️ prod 回 400，見上方說明)
-
-不需 config;直接帶原始資料點與規格界限。Query 參數:`points`(逗號分隔)、`USL`、`LSL`、`stdValue`、`measureAmount`。
-
-```bash
-curl -s "${API_URL}/v1/statistics/capability-by-point/?points=10.01,10.02,9.98&USL=10.5&LSL=9.5&stdValue=10&measureAmount=5" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-### Calculate Results(預算結果)
-
-Query 參數:`range`(`day|week|month|custom`)、`metricName`(`Cpk|nelsonRule1..8|overSpecs`)、`limit`(必填,>=0)、自訂範圍時另帶 `workOrderOpHistoryStartTimeFrom` / `workOrderOpHistoryStartTimeTo`(RFC3339)。
+Query 參數:`range`(`day|week|month|custom`)、`metricName`(`Cpk|nelsonRule1..8|overSpecs`)、`limit`(必填,>=0)、自訂範圍時另帶 `workOrderOpHistoryStartTimeFrom` / `workOrderOpHistoryStartTimeTo`(RFC3339 帶時區偏移,≤ 31 天)。
 
 ```bash
 curl -s "${API_URL}/v1/statisticCalculateResult/?range=week&metricName=Cpk&limit=20" \
@@ -293,10 +270,15 @@ curl -s "${API_URL}/v1/rule/" \
 
 ### List History
 
-`spcMeasurePointConfigUUID` 為必填。無分頁,回全部符合結果。
+`spcMeasurePointConfigUUID` 為必填。**無分頁、也沒有時間篩選，回該量測點的全部歷史**（可能數萬筆）。要看一段時間請改用 `/v1/history/manufacture/`（帶 `workOrderOpHistoryStartTime` / `workOrderOpHistoryEndTime`，≤ 92 天；它同樣不分頁）或加 `workOrderOpHistoryUUID` / `spcMeasureInstrumentUUID` 縮小；**不要對多個量測點迴圈呼叫這支。**
 
 ```bash
-curl -s "${API_URL}/v2/history/?spcMeasurePointConfigUUID=${CONFIG_UUID}" \
+# 只看一張工單作業的量測
+curl -s "${API_URL}/v2/history/?spcMeasurePointConfigUUID=${CONFIG_UUID}&workOrderOpHistoryUUID=${WO_OP_HISTORY_UUID}" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+# 一段時間的量測：改用 manufacture（依工單作業開始時間篩選）
+curl -s "${API_URL}/v1/history/manufacture/?spcMeasurePointConfigUUID=${CONFIG_UUID}&workOrderOpHistoryStartTime=2026-03-01T00:00:00%2B08:00&workOrderOpHistoryEndTime=2026-03-31T00:00:00%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -407,15 +389,10 @@ curl -s -X DELETE "${API_URL}/v2/config/parent/${PARENT_UUID}/attachment/" \
 
 ### Statistics
 
-必填參數:nelson / capability 需 `spcMeasurePointConfigUUID` + `workOrderOpHistoryUUID` + `startTime` + `endTime`(RFC3339)。
-
 | Operation | Method | Endpoint |
 |-----------|--------|----------|
-| Nelson rules（⚠️ prod 回 500，見上方說明） | GET | `/v1/statistics/nelson/` |
-| Nelson by point | GET | `/v1/statistics/nelson-by-point/` |
-| Capability（⚠️ prod 回 503，見上方說明） | GET | `/v1/statistics/capability/` |
-| Capability by point（⚠️ prod 回 400，見上方說明） | GET | `/v1/statistics/capability-by-point/` |
-| Calculate result | GET | `/v1/statisticCalculateResult/` |
+| Nelson by point（⚠️ 上游可能不可用，使用前先確認） | GET | `/v1/statistics/nelson-by-point/` |
+| Calculate result（非唯讀，會重算全租戶） | GET | `/v1/statisticCalculateResult/` |
 | List rules | GET | `/v1/rule/` |
 
 ---
@@ -432,7 +409,7 @@ v3 走同樣的 `Authorization: Bearer {token}`,但路由**不帶結尾斜線**�
 | 儀表板:趨勢 runs | GET | `/v3/dashboard/trendRuns` |
 | 報表搜尋 | GET | `/v3/spcReport/search` |
 | 檢點表清單 / 含歷史 / 量測歷史 | GET | `/v3/spcInspectionSheets`、`/v3/spcInspectionSheets/withHistory`、`/v3/spcInspectionSheets/measureHistory` |
-| v3 量測歷史查詢 | GET | `/v3/spcMeasurePointHistory/`、`/v3/spcMeasurePointHistory/v3` |
+| v3 量測歷史查詢 | GET | `/v3/spcMeasurePointHistory/`、`/v3/spcMeasurePointHistory/v3`（呼叫前先確認時間參數，一律帶 ≤ 31 天區間） |
 | 量測點特性庫 / 樣板 | GET | `/v3/spcMeasurePointMaster`、`/v3/spcMeasurePointTemplate` |
 | 量測點設定清單 | GET | `/v3/measurePointConfigList` |
 | 儀器清單 / 校正到期提醒 | GET | `/v3/instrument`、`/v3/instrument/dueReminders` |
@@ -456,3 +433,4 @@ curl -s "${API_URL}/v3/instrument/dueReminders" \
 | 403 | Permission denied | Check user permissions |
 | 404 | 路徑錯誤(常見:少了尾斜線,或用了舊的 spcXxx 前綴) | 對照上方 Quick Reference |
 | 422 | Validation error | Check input parameters |
+| 逾時 / 5xx | 查詢範圍太大，伺服器可能還在跑那個查詢 | 不要重送同一個請求；縮短時間區間或加篩選 |

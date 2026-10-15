@@ -45,6 +45,8 @@ Performance = (Total Parts x Ideal Cycle Time) / Operating Time
 
 ## Tools Reference
 
+> **Time range** (every tool with `start_time` / `end_time`): RFC3339 with an explicit offset (e.g. `2026-10-01T00:00:00+08:00`), `start_time` strictly before `end_time`; at most 31 days per call for the `*_device_range` tools and 92 days for the others. `device_uuids` takes at most 50 UUIDs. A request outside these limits is refused before anything is sent. Both ends are sent to the API at +08:00. Cost grows with the number of days (× devices for the multi-device, line and factory tools).
+
 ### Authentication Tools
 
 #### auth_login
@@ -67,17 +69,17 @@ Get availability for a single device.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_availability_devices
 Get availability for multiple devices.
 
 **Parameters:**
-- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `device_uuids` (string, required): Comma-separated device UUIDs, at most 50 (e.g. `"dev-1,dev-2,dev-3"`)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_availability_line
@@ -85,8 +87,8 @@ Get availability for a production line.
 
 **Parameters:**
 - `line_uuid` (string, required): Line UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_availability_factory
@@ -94,17 +96,17 @@ Get availability for a factory.
 
 **Parameters:**
 - `factory_uuid` (string, required): Factory UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_availability_device_range
-Get availability for a device broken down by day over a time range (daily trend).
+Get availability for a device broken down by day over a time range (daily trend, +08:00 calendar days). At most 31 days per call.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -116,17 +118,17 @@ Get quality rate for a single device.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_quality_devices
 Get quality rate for multiple devices.
 
 **Parameters:**
-- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `device_uuids` (string, required): Comma-separated device UUIDs, at most 50 (e.g. `"dev-1,dev-2,dev-3"`)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_quality_line
@@ -134,8 +136,8 @@ Get quality rate for a production line.
 
 **Parameters:**
 - `line_uuid` (string, required): Line UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_quality_factory
@@ -143,17 +145,17 @@ Get quality rate for a factory.
 
 **Parameters:**
 - `factory_uuid` (string, required): Factory UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_quality_device_range
-Get quality rate for a device broken down by day over a time range (daily trend).
+Get quality rate for a device broken down by day over a time range (daily trend, +08:00 calendar days). At most 31 days per call.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -165,17 +167,17 @@ Get performance for a single device.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_performance_devices
 Get performance for multiple devices.
 
 **Parameters:**
-- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `device_uuids` (string, required): Comma-separated device UUIDs, at most 50 (e.g. `"dev-1,dev-2,dev-3"`)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_performance_line
@@ -183,8 +185,8 @@ Get performance for a production line.
 
 **Parameters:**
 - `line_uuid` (string, required): Line UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_performance_factory
@@ -192,17 +194,17 @@ Get performance for a factory.
 
 **Parameters:**
 - `factory_uuid` (string, required): Factory UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_performance_device_range
-Get performance trend for a device over a time range (daily breakdown).
+Get performance trend for a device over a time range (daily breakdown, +08:00 calendar days). At most 31 days per call.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -214,17 +216,17 @@ Get combined OEE (Availability x Quality x Performance) for a single device.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_devices
 Get combined OEE for multiple devices.
 
 **Parameters:**
-- `device_uuids` (string, required): Comma-separated device UUIDs (e.g. `"dev-1,dev-2,dev-3"`)
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `device_uuids` (string, required): Comma-separated device UUIDs, at most 50 (e.g. `"dev-1,dev-2,dev-3"`)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_line
@@ -232,8 +234,8 @@ Get combined OEE for a production line.
 
 **Parameters:**
 - `line_uuid` (string, required): Line UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### oee_factory
@@ -241,8 +243,8 @@ Get combined OEE for a factory.
 
 **Parameters:**
 - `factory_uuid` (string, required): Factory UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -263,12 +265,12 @@ Get current OEE status for a device.
 #### oee_alarm_history
 Get OEE-related alarm history.
 
-Returns the full alarm array for the device over the time range (no pagination, no code filtering).
+The API returns the full alarm array for the device over the time range (no pagination, no code filtering); the tool shows the leading alarms that fit the response size limit and says how many were left out. Narrow the period to see the rest.
 
 **Parameters:**
 - `device_uuid` (string, required): Device UUID
-- `start_time` (string, required): Start time (ISO 8601)
-- `end_time` (string, required): End time (ISO 8601)
+- `start_time` (string, required): Start time (RFC3339 with offset)
+- `end_time` (string, required): End time (RFC3339 with offset)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -279,26 +281,26 @@ Returns the full alarm array for the device over the time range (no pagination, 
 
 ```
 # 1. Get overall factory OEE
-oee_factory(factory_uuid: "factory-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_factory(factory_uuid: "factory-uuid", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 
 # 2. Drill down to lines
-oee_line(line_uuid: "line-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_line(line_uuid: "line-uuid", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 
 # 3. Identify low-performing devices
-oee_devices(device_uuids: "dev-1,dev-2,dev-3", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_devices(device_uuids: "dev-1,dev-2,dev-3", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 ```
 
 ### Workflow: Analyze availability issues
 
 ```
 # 1. Check availability
-oee_availability_device(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_availability_device(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 
 # 2. Check alarm history for root cause
-oee_alarm_history(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_alarm_history(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 
 # 3. Get performance trend
-oee_performance_device_range(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00Z", end_time: "2026-02-07T23:59:59Z")
+oee_performance_device_range(device_uuid: "device-uuid", start_time: "2026-02-01T00:00:00+08:00", end_time: "2026-02-07T23:59:59+08:00")
 ```
 
 ## Error Handling
@@ -309,7 +311,8 @@ Except for auth, this API returns **500** with a plain-text message for almost a
 |-------|-------|----------|
 | 401 Unauthorized | Token expired/invalid | Call `auth_login` with tenant_id |
 | 500 `Cannot find this device.` | Wrong UUID | Verify the UUID |
-| 500 `From time cannot be parsed.` | `start_time`/`end_time` missing or not ISO 8601 | Check time range parameters |
+| 500 `From time cannot be parsed.` | `start_time`/`end_time` missing or not RFC3339 | Check time range parameters |
+| Timeout / 5xx | Query too large; the server may still be computing | Do not resend the same call; narrow the period or query fewer devices. After a timeout or 504 the identical request is refused for 120 s (`Not sent: the same request timed out N s ago…`) |
 
 ## MCP Server
 

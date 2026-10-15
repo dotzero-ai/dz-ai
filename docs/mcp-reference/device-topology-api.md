@@ -69,8 +69,8 @@ Check if the client is authenticated.
 List organizational groups.
 
 **Parameters:**
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `limit` (number, default: 20): Max results (1-100, client-side)
+- `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_group_get
@@ -109,9 +109,9 @@ Delete a group.
 List factories under a group.
 
 **Parameters:**
-- `group_uuid` (string, **required**): Group UUID — backend errors ("The groupUUID is not given.") without it. To list all factories regardless of group, use `GET /v1/factories/all` (see Additional Query Endpoints).
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `group_uuid` (string, **required**): Group UUID — backend errors ("The groupUUID is not given.") without it; find groups with `topo_group_list`.
+- `limit` (number, default: 20): Max results (1-100, client-side)
+- `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_factory_get
@@ -154,9 +154,9 @@ Delete a factory.
 List production lines under a factory.
 
 **Parameters:**
-- `factory_uuid` (string, **required**): Factory UUID — backend errors ("The factoryUUID is not given.") without it. To list all lines, use `GET /v1/lines/all`.
-- `limit` (number, default: 20): Max results (1-100)
-- `offset` (number, default: 0): Pagination offset
+- `factory_uuid` (string, **required**): Factory UUID — backend errors ("The factoryUUID is not given.") without it; find factories with `topo_factory_list`.
+- `limit` (number, default: 20): Max results (1-100, client-side)
+- `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_line_get
@@ -198,7 +198,7 @@ Delete a line.
 List devices/machines under a line.
 
 **Parameters:**
-- `line_uuid` (string, **required**): Line UUID — backend errors ("The lineUUID is not given.") without it. There is no factory-level filter on this endpoint; to list all devices use `GET /v1/devices/all`.
+- `line_uuid` (string, **required**): Line UUID — backend errors ("The lineUUID is not given.") without it. There is no factory-level filter on this endpoint; find lines with `topo_line_list`.
 - `limit` (number, default: 20): Max results (1-100, client-side)
 - `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -322,7 +322,7 @@ An **alarm code** is a numeric code belonging to one alarm group (`alarm_uuid`).
 List alarm codes for a given alarm group.
 
 **Parameters:**
-- `alarm_uuid` (string, **required**): Parent alarm group UUID — backend errors ("The alarmUUID is not given.") without it
+- `alarm_uuid` (string, **required**): Parent alarm group UUID — backend errors ("The alarmUUID is not given.") without it; find alarm groups with `topo_alarm_list`
 - `limit` (number, default: 20): Max results (1-100, client-side)
 - `offset` (number, default: 0): Pagination offset (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
@@ -376,9 +376,10 @@ Batch **add and/or remove** alarm codes in one call (this is add + delete, **not
 ### Topology Tools
 
 #### topo_topology_count
-Get count of entities in the topology (groups, factories, lines, devices).
+Get count of entities in the topology (groups, factories, lines, devices). All zeros can also mean the account lacks topology read permission: the endpoint still answers 200 with zeros (other topology tools then fail with 401), and the tool adds a note saying so.
 
-**Parameters:** None
+**Parameters:**
+- `response_format` ('markdown'|'json', default: 'markdown')
 
 #### topo_topology_all
 Get the full topology tree (all groups, factories, lines, devices).
@@ -393,11 +394,11 @@ Get the full topology tree (all groups, factories, lines, devices).
 ### Workflow: Explore factory topology
 
 ```
-# 1. Get full tree
-topo_topology_all()
+# 1. List groups
+topo_group_list()
 
-# 2. List factories
-topo_factory_list()
+# 2. List factories in a group (group_uuid is required)
+topo_factory_list(group_uuid: "group-uuid")
 
 # 3. Get lines in a factory
 topo_line_list(factory_uuid: "factory-uuid")
@@ -424,7 +425,6 @@ These backend endpoints have no dedicated MCP tool but are useful and callable d
 | Purpose | Endpoint |
 |---------|----------|
 | Search devices by name (returns topology subtree) | `GET /v1/topology/search/device?name=` |
-| List all factories / lines / devices (no parent UUID needed) | `GET /v1/factories/all`, `/v1/lines/all`, `/v1/devices/all` |
 | Device count under a topology node | `GET /v1/devices/count?type=group\|factory\|line&uuid=` (both required; `uuid=null` = unassigned line) |
 | List plant floors | `GET /v1/plantFloors/` (optionally `?topologyType=&topologyUuid=`) |
 | Create alarm group + its codes in one call | `POST /v1/alarms/withAlarmCodes` body `{name, alarmCodes:[...]}` |
@@ -438,6 +438,7 @@ This API signals **almost all errors as HTTP 500** with a plain-text message bod
 |-------|--------------------|
 | 401 Unauthorized | Not authenticated — call `auth_login` with tenant_id |
 | 500 + text message | Validation failure, missing required query param, or resource not found — read the message body (e.g. "The groupUUID is not given.", "invalid groupUuid") |
+| Timeout / 5xx | The server may still be processing: do not resend the same call; narrow with a parent UUID. After a timeout or 504 the identical request is refused for 120 s (`Not sent: the same request timed out N s ago…`) |
 
 ## MCP Server
 

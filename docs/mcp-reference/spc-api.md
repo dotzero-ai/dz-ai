@@ -4,18 +4,18 @@ MCP skill for Statistical Process Control (SPC) — manage measurement configura
 
 ## Overview
 
-This skill provides 46 tools for interacting with the SPC API:
+This skill provides 45 tools for interacting with the SPC API:
 
 - **Authentication** (2): Login and check auth status
 - **Products V2** (2): List manufacture and stock products
 - **History V2** (4): Batch upsert/query/delete inspection history by group
-- **Config Parent V2** (5): Parent config management with attachments
+- **Config Parent V2** (4): Parent config management with attachments
 - **Measure Config V1** (9): Measurement point configuration CRUD with attachments, modes, and categories
 - **Measure History V1** (11): Measurement history CRUD, batch operations, filtering, and counting
 - **Instruments V1** (5): Measurement instrument management with batch delete
 - **Rules V1** (1): List control chart rules
 - **Dashboard V1** (6): Dashboard configuration and manufacture dashboard
-- **Statistics V1** (4): Nelson rules, capability analysis, and calculation results
+- **Statistics V1** (1): Calculation results (recomputed on every call)
 
 ## Prerequisites
 
@@ -78,12 +78,12 @@ List stock products for SPC inspection.
 ### History Tools (V2)
 
 #### spc_history_list
-List SPC inspection history records for a measure point config (GET /v2/history/). No server-side pagination — returns all matching records.
+List SPC inspection history records for a measure point config (GET /v2/history/). Returns the measure point's WHOLE history (no time filter, no pagination; can be tens of thousands of rows). Prefer `spc_measure_history_manufacture` with `start_time`/`end_time`; never call this in a loop over many measure points. The tool shows the leading records that fit the response size limit and says how many were left out.
 
 **Parameters:**
 - `spc_measure_point_config_uuid` (string, **required**): Measure point config UUID
-- `work_order_op_history_uuid` (string, optional): Filter by work order operation history UUID
-- `spc_measure_instrument_uuid` (string, optional): Filter by measure instrument UUID
+- `work_order_op_history_uuid` (string, optional): Only measurements of this work order operation history
+- `spc_measure_instrument_uuid` (string, optional): Only measurements taken with this measure instrument
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_history_batch_upsert
@@ -259,28 +259,33 @@ Batch delete measurement history records.
 - `ids` (array, required): Array of UUIDs to delete
 
 #### spc_measure_history_manufacture
-List measurement history for manufacture products.
+List one measure point config's measurements taken during manufacturing, filtered by when the work order operation started (GET /v1/history/manufacture/). Without `start_time`/`end_time` the last 30 days are used (the result says so), unless `work_order_op_history_uuid` is given. The API returns every matching record at once; `limit`/`offset` page through it client-side (`has_more` / `next_offset`), and each page re-runs the whole query, so prefer a shorter period over paging.
 
 **Parameters:**
-- `spc_measure_point_config_uuid` (string, optional): Filter by config
-- `limit` (number, default: 20): Max results
-- `offset` (number, default: 0): Pagination offset
+- `spc_measure_point_config_uuid` (string, **required**): Measure point config UUID
+- `start_time` (string, optional): Work order operations started at or after this time, RFC3339 with an explicit offset (e.g. `2026-10-01T00:00:00+08:00`). Give both `start_time` and `end_time` or neither; `start_time` must be before `end_time`; at most 92 days
+- `end_time` (string, optional): Work order operations started at or before this time, RFC3339 with an explicit offset
+- `work_order_op_history_uuid` (string, optional): Work order operation history UUID filter; with it and no period, no default period applies
+- `limit` (number, default: 20): Rows to return (1-100, client-side)
+- `offset` (number, default: 0): Rows to skip (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_measure_history_stock
-List measurement history for stock products.
+List one measure point config's stock/inventory measurement history (GET /v1/history/stock/). No time filter: without `product_storage_history_uuid` every call reads the config's whole stock history. The API returns it at once; `limit`/`offset` page through it client-side.
 
 **Parameters:**
-- `spc_measure_point_config_uuid` (string, optional): Filter by config
-- `limit` (number, default: 20): Max results
-- `offset` (number, default: 0): Pagination offset
+- `spc_measure_point_config_uuid` (string, **required**): Measure point config UUID
+- `product_storage_history_uuid` (string, optional): Product storage history UUID filter (one stock-in/out record)
+- `limit` (number, default: 20): Rows to return (1-100, client-side)
+- `offset` (number, default: 0): Rows to skip (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_measure_history_count
-Get count of measurement history records.
+Get the count of measurement history records for a measure point config: total, manufacture and stock.
 
 **Parameters:**
-- `spc_measure_point_config_uuid` (string, optional): Filter by config
+- `spc_measure_point_config_uuid` (string, **required**): Measure point config UUID
+- `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_measure_history_filter_list
 List distinct filter values (work orders, workers, instruments, devices) for a manufacture measure point config (GET /v1/history/filter-list/{filterType}/).
@@ -309,11 +314,11 @@ List distinct stock filter values (warehouses, serial numbers, work order IDs, w
 ### Instrument Tools (V1)
 
 #### spc_instrument_list
-List measurement instruments.
+List measurement instruments. The API has no offset, so the list is fetched once and paged client-side.
 
 **Parameters:**
-- `limit` (number, default: 20): Max results
-- `offset` (number, default: 0): Pagination offset
+- `limit` (number, default: 20): Rows to return (1-100, client-side)
+- `offset` (number, default: 0): Rows to skip (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_instrument_create
@@ -357,11 +362,11 @@ List available control chart rules (e.g., Nelson rules).
 ### Dashboard Tools (V1)
 
 #### spc_dashboard_list
-List SPC dashboards.
+List SPC dashboards. The API has no paging and returns every dashboard at once; the list is paged client-side.
 
 **Parameters:**
-- `limit` (number, default: 20): Max results
-- `offset` (number, default: 0): Pagination offset
+- `limit` (number, default: 20): Rows to return (1-100, client-side)
+- `offset` (number, default: 0): Rows to skip (client-side)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 #### spc_dashboard_create
@@ -407,14 +412,16 @@ Update a manufacture dashboard entry.
 
 
 #### spc_statistics_calculate_result
-Get pre-calculated SPC statistics for a time range and metric (GET /v1/statisticCalculateResult/).
+Get SPC statistics per measure point config for a window of work order operation start times, highest metric value first (GET /v1/statisticCalculateResult/).
+
+**Not read-only, and expensive:** every call recomputes the metric for every measure point config in the whole tenant over the window and saves the results before returning the top `limit`. Use the shortest range that answers the question and do not repeat the same call.
 
 **Parameters:**
-- `range` (enum, required): `day` | `week` | `month` | `custom`
+- `range` (enum, required): `day` | `week` | `month` | `custom` — `day` / `week` / `month` are the 1 / 7 / 30 days that end at 00:00 (+08:00) yesterday
 - `metric_name` (enum, required): `Cpk` | `nelsonRule1`..`nelsonRule8` | `overSpecs`
-- `work_order_op_history_start_time_from` (string, optional): Start time (ISO 8601, for `custom` range)
-- `work_order_op_history_start_time_to` (string, optional): End time (ISO 8601, for `custom` range)
-- `limit` (number, optional, default: 20): Max results
+- `work_order_op_history_start_time_from` (string, `range: custom` only, required there): Window start, RFC3339 with an explicit offset; the window may span at most 31 days
+- `work_order_op_history_start_time_to` (string, `range: custom` only, required there): Window end, RFC3339 with an explicit offset
+- `limit` (number, default: 20): How many results to return, highest metric value first (1-100)
 - `response_format` ('markdown'|'json', default: 'markdown')
 
 ---
@@ -433,15 +440,15 @@ spc_measure_config_create(name: "Dimension A - Length", std_value: 10.0, measure
 # 3. Record measurements
 spc_measure_history_create(spc_measure_point_config_uuid: "config-uuid", values: [10.02], measure_time: "2026-07-21T08:00:00Z")
 
-# 4. Read pre-computed Cpk for the last week
+# 4. Cpk for the last week (recomputes and saves results for the whole tenant: call once)
 spc_statistics_calculate_result(range: "week", metric_name: "Cpk")
 ```
 
 > `spc_statistics_capability` 與 `spc_statistics_nelson` 已於 2026-08-13 移除：它們轉發給
 > spc-backend 的 `DZ_SPC_STATISTIC_API` 上游，該上游對 production 實測不可達
 > （500 / 503，三次重打結果穩定）。上游恢復後可還原。
-> `spc_statistics_capability_by_point` 打同一個上游，2026-10-14 實測照範例參數一律 400（空 body），
-> 也已移除。即時算 Cpk 目前沒有可用的端點，改看 `spc_statistics_calculate_result` 的預算結果。
+> `spc_statistics_capability_by_point` 打同一個上游，實測照範例參數一律 400（空 body），
+> 也已移除。即時算 Cpk 目前沒有可用的端點，改用 `spc_statistics_calculate_result`（非唯讀：每次呼叫都重算整個租戶並寫回，見上方說明）。
 
 ### Workflow: Check quality status
 
@@ -473,16 +480,17 @@ These read-only v3 queries are useful for monitoring/reporting but are not expos
 
 | Error | Solution |
 |-------|----------|
-| 400 Bad Request | Missing required param (e.g. statistics need start/end time + work order uuid) |
+| 400 Bad Request | Missing required param |
 | 401 Unauthorized | Call `auth_login` with tenant_id |
 | Token expired | Call `auth_refresh` or `auth_login` again |
 | 404 Not Found | Verify the UUID |
 | 422 Validation | Check input parameters |
+| Timeout / 5xx | The server may still be computing: do not resend the same call; narrow the period or add filters. After a timeout or 504 the identical request is refused for 120 s (`Not sent: the same request timed out N s ago…`) |
 
 ## MCP Server
 
 - **Package**: `@dotzero.ai/spc-mcp`
-- **Tools**: 46 (6 basic + 40 advanced, unlocked after auth)
+- **Tools**: 45 (6 basic + 39 advanced, unlocked after auth)
 
 ## Repository
 

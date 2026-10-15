@@ -41,7 +41,9 @@ OEE = 可用率 (Availability) x 品質率 (Quality) x 稼動率 (Performance)
 
 ## 共用時間參數
 
-所有帶時間區間的端點都使用 query 參數 `from` 與 `to`（**必填**，RFC3339 格式，如 `2026-02-01T00:00:00Z`）。缺少或格式錯誤會回 500 `From time cannot be parsed.`。
+所有帶時間區間的端點都使用 query 參數 `from` 與 `to`（**必填**，RFC3339 帶時區偏移，如 `2026-02-01T00:00:00+08:00`；放進 query string 時 `+` 要寫成 `%2B`）。`from` 必須早於 `to`，且兩端用同一個偏移（否則後端逐日計算可能停不下來）。缺少或格式錯誤會回 500 `From time cannot be parsed.`。
+
+後端逐日、逐台計算，成本隨天數 × 設備數成長。區間上限比照 MCP 工具：`/range`（每日趨勢）≤ 31 天、其他 ≤ 92 天；多設備 `deviceUUID` 一次 ≤ 50 台。不要不帶區間呼叫；逾時或 5xx 不要重送同一個請求（伺服器可能還在算），改縮短區間或減少設備。
 
 ---
 
@@ -50,7 +52,7 @@ OEE = 可用率 (Availability) x 品質率 (Quality) x 稼動率 (Performance)
 ### Device Availability
 
 ```bash
-curl -s "${API_URL}/availability/device/${DEVICE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/availability/device/${DEVICE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -59,28 +61,28 @@ curl -s "${API_URL}/availability/device/${DEVICE_UUID}?from=2026-02-01T00:00:00Z
 單數 `/device` 路徑（無 path 參數），`deviceUUID` query 參數用逗號分隔多個 UUID：
 
 ```bash
-curl -s "${API_URL}/availability/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/availability/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Device Availability Range (Daily Trend)
 
 ```bash
-curl -s "${API_URL}/availability/device/${DEVICE_UUID}/range?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/availability/device/${DEVICE_UUID}/range?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Line Availability
 
 ```bash
-curl -s "${API_URL}/availability/line/${LINE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/availability/line/${LINE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Factory Availability
 
 ```bash
-curl -s "${API_URL}/availability/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/availability/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -91,35 +93,35 @@ curl -s "${API_URL}/availability/factory/${FACTORY_UUID}?from=2026-02-01T00:00:0
 ### Device Quality
 
 ```bash
-curl -s "${API_URL}/quality/device/${DEVICE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/quality/device/${DEVICE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Multi-Device Quality
 
 ```bash
-curl -s "${API_URL}/quality/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/quality/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Device Quality Range (Daily Trend)
 
 ```bash
-curl -s "${API_URL}/quality/device/${DEVICE_UUID}/range?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/quality/device/${DEVICE_UUID}/range?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Line Quality
 
 ```bash
-curl -s "${API_URL}/quality/line/${LINE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/quality/line/${LINE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Factory Quality
 
 ```bash
-curl -s "${API_URL}/quality/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/quality/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -130,35 +132,35 @@ curl -s "${API_URL}/quality/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00Z&to
 ### Device Performance
 
 ```bash
-curl -s "${API_URL}/performance/device/${DEVICE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/performance/device/${DEVICE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Multi-Device Performance
 
 ```bash
-curl -s "${API_URL}/performance/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/performance/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Device Performance Range (Daily Trend)
 
 ```bash
-curl -s "${API_URL}/performance/device/${DEVICE_UUID}/range?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/performance/device/${DEVICE_UUID}/range?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Line Performance
 
 ```bash
-curl -s "${API_URL}/performance/line/${LINE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/performance/line/${LINE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Factory Performance
 
 ```bash
-curl -s "${API_URL}/performance/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/performance/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -171,28 +173,28 @@ curl -s "${API_URL}/performance/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00
 ### Device OEE
 
 ```bash
-curl -s "${API_URL}/oee/device/${DEVICE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/oee/device/${DEVICE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Multi-Device OEE
 
 ```bash
-curl -s "${API_URL}/oee/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/oee/device?deviceUUID=${UUID1},${UUID2}&from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Line OEE
 
 ```bash
-curl -s "${API_URL}/oee/line/${LINE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/oee/line/${LINE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
 ### Factory OEE
 
 ```bash
-curl -s "${API_URL}/oee/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/oee/factory/${FACTORY_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -212,7 +214,7 @@ curl -s "${API_URL}/status/device/${DEVICE_UUID}" \
 回傳指定時間區間內該設備的完整警報陣列（無分頁、無 `limit`/`alarmCode` 過濾）：
 
 ```bash
-curl -s "${API_URL}/alarmCode/history/device/${DEVICE_UUID}?from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/alarmCode/history/device/${DEVICE_UUID}?from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -221,7 +223,7 @@ curl -s "${API_URL}/alarmCode/history/device/${DEVICE_UUID}?from=2026-02-01T00:0
 查任意 tag 數值統計（如耗電量、產量計數）。`tagName` 與 `type` 必填，`type` 目前僅支援 `sum`，回傳 `{"value": <number>}`（四捨五入至小數 2 位）：
 
 ```bash
-curl -s "${API_URL}/tagStatus/device/${DEVICE_UUID}?tagName=${TAG_NAME}&type=sum&from=2026-02-01T00:00:00Z&to=2026-02-07T23:59:59Z" \
+curl -s "${API_URL}/tagStatus/device/${DEVICE_UUID}?tagName=${TAG_NAME}&type=sum&from=2026-02-01T00:00:00%2B08:00&to=2026-02-07T23:59:59%2B08:00" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -276,7 +278,7 @@ curl -s "${API_URL}/tagStatus/device/${DEVICE_UUID}?tagName=${TAG_NAME}&type=sum
 | Alarm history | GET | `/alarmCode/history/device/{deviceUUID}` |
 | Tag statistics (sum) | GET | `/tagStatus/device/{deviceUUID}?tagName=...&type=sum` |
 
-**共用查詢參數**: `from`, `to`（RFC3339，必填）；多設備查詢用 `deviceUUID`（逗號分隔）；performance/OEE 的 multi-device/line/factory 另支援選填 `onlyCalculateHasDoneWooh=true`
+**共用查詢參數**: `from`, `to`（RFC3339 帶時區偏移，必填；`/range` ≤ 31 天、其他 ≤ 92 天）；多設備查詢用 `deviceUUID`（逗號分隔，≤ 50 台）；performance/OEE 的 multi-device/line/factory 另支援選填 `onlyCalculateHasDoneWooh=true`
 
 ---
 
@@ -289,3 +291,4 @@ curl -s "${API_URL}/tagStatus/device/${DEVICE_UUID}?tagName=${TAG_NAME}&type=sum
 | 401 | Token expired/invalid | Refresh token or re-login |
 | 500 `Cannot find this device.` | UUID 錯誤 | Verify UUID |
 | 500 `From time cannot be parsed.` | `from`/`to` 缺失或非 RFC3339 | Check time parameters |
+| 逾時 / 其他 5xx | 查詢範圍太大，伺服器可能還在算 | 不要重送同一個請求；縮短 `from`/`to` 區間或減少設備數 |

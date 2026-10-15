@@ -31,6 +31,8 @@ TOKEN=$(jq -r .token "$DZ/credentials.json")
 
 回 401 = token 過期：照 `dotzero-auth` 的「Manual Token Refresh」換新後重試；refresh 也失敗就重新登入。
 
+> ⚠️ SCM 清單端點**不分頁**（多數也沒有過濾參數），每次都回傳全部資料列：不要在迴圈裡反覆打，只要計數就用 `/v1/dashboard/counters`。遇到逾時或 5xx **不要重送同一個請求**——後端可能還在跑那個查詢，能過濾就過濾（如發票 `status`）再查。
+
 ---
 
 ## Dashboard (V1)
@@ -243,7 +245,7 @@ curl -s "${API_URL}/v1/invoices/billable" \
 
 ## Other Read Endpoints (V1)
 
-以下清單端點皆回傳裸 JSON 陣列。**注意尾斜線**：這些路由註冊為 group `GET("/")`，gin 會把 `/v1/quotes` 301 轉址到 `/v1/quotes/` — curl 不加 `-L` 會拿不到 body，請直接使用含尾斜線的路徑。
+以下清單端點皆回傳裸 JSON 陣列（不分頁）。**注意尾斜線**：這些路由註冊為 group `GET("/")`，gin 會把 `/v1/quotes` 301 轉址到 `/v1/quotes/` — curl 不加 `-L` 會拿不到 body，請直接使用含尾斜線的路徑。
 
 ### List PO Items / Quotes（採購單品項 / 報價）
 
@@ -330,3 +332,4 @@ curl -s "${API_URL}/v1/announcements/" -H "Authorization: Bearer ${TOKEN}"
 | 401 | Token expired/invalid | Refresh token or re-login |
 | 403 | Permission denied — 缺該端點對應的 permission key（見 Quick Reference 的 Permission 欄） | Check user permissions |
 | 404 | Resource not found | Verify endpoint path（清單端點需含尾斜線） |
+| 5xx / 逾時 | 資料量太大，後端可能仍在執行 | **不要重送同一個請求**；能過濾就過濾（如發票 `status`），只要計數改用 `/v1/dashboard/counters` |

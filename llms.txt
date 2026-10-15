@@ -9,7 +9,7 @@
 3. Authenticate: `auth_login(tenant_id)` — opens a browser login page; the password never passes through the AI
 4. Use tools: `workorder_list()`, `oee_device()`, `chart_bar()`, etc.
 
-## Available MCP Tools (259)
+## Available MCP Tools (255)
 
 ### Authentication (2)
 - `auth_login` - Login (tenant_id only → browser login form; email/password optional)
@@ -55,8 +55,8 @@ adds a third, `auth_refresh` (refresh an expired token), for a total of 3.
 ### Reports & Analytics (9)
 - `workorder_report` - Work order report (raw records)
 - `report_update` - Update report
-- `analytics_operations` - Operation analytics
-- `analytics_workorder_report` - Work order analytics
+- `analytics_operations` - Operation records finished in a period (at most 7 days)
+- `analytics_workorder_report` - Operation records finished in a period (at most 7 days)
 - `production_summary` - Production output over a date range
 - `workorder_dashboard` - Work order KPI dashboard
 - `worker_efficiency_ranking` - Worker efficiency ranking
@@ -67,7 +67,8 @@ There is no `weekly_report` tool — the backend's weekly-report route is disabl
 Use `production_summary` or `workorder_dashboard` instead.
 
 The ranking/summary tools, `material_production_ranking`, `workorder_dashboard` and `workorder_report` filter the period on 報工時間
-(operations with a start or finish report in it) unless `time_basis` says otherwise (`op_start`, `op_end`, `planned`); periods are at most 92 days.
+(operations with a start or finish report in it) unless `time_basis` says otherwise (`op_start`, `op_end`, or `planned` together with a work order); periods are at most 92 days.
+These tools refuse a call with no period and no work order. Never retry a timed-out call; narrow the period instead.
 
 ### Cache (4)
 - `workorder_cache_status`, `workorder_cache_download`, `workorder_cache_query`, `workorder_cache_clear`
@@ -103,11 +104,11 @@ The ranking/summary tools, `material_production_ranking`, `workorder_dashboard` 
 - History: `abnormal_history_list`, `abnormal_history_get`, `abnormal_history_create`, `abnormal_history_update`, `abnormal_history_by_workorder`
 - Config: `abnormal_category_list`, `abnormal_category_create`, `abnormal_state_list`, `abnormal_state_create`
 
-### Warehouse & WMS (15)
+### Warehouse (11)
 - Warehouses: `warehouse_list`, `warehouse_get`, `warehouse_create`, `warehouse_update`
 - Storage: `warehouse_storage_list`, `warehouse_storage_get`, `warehouse_storage_create`, `warehouse_storage_update`
 - Product Storage: `product_storage_list`, `product_storage_get`, `product_storage_by_product`
-- WMS: `wms_check_inventory`, `wms_query_product_storage`, `wms_query_storage_history`, `wms_minimal_stock_count`
+- Stock queries and low stock: use `@dotzero.ai/wms-mcp` (`wms_stock_query`, `wms_low_stock_list`, `wms_picking_progress`)
 
 ## Work Order Status
 
@@ -190,7 +191,7 @@ The ranking/summary tools, `material_production_ranking`, `workorder_dashboard` 
 ## npm Packages
 
 - `@dotzero.ai/auth-mcp` - Authentication MCP server (3 tools)
-- `@dotzero.ai/work-order-mcp` - Work Order MCP server (103 tools)
+- `@dotzero.ai/work-order-mcp` - Work Order MCP server (99 tools)
 - `@dotzero.ai/spc-mcp` - SPC MCP server (45 tools)
 - `@dotzero.ai/equipment-mcp` - Equipment monitoring MCP server (12 tools)
 - `@dotzero.ai/device-topology-mcp` - Device topology MCP server (39 tools)
@@ -201,7 +202,7 @@ The ranking/summary tools, `material_production_ranking`, `workorder_dashboard` 
 - `@dotzero.ai/sd-mcp` - Sales & distribution MCP server (5 tools, read-only)
 - `@dotzero.ai/wms-mcp` - Warehouse MCP server (5 tools, read-only)
 - `@dotzero.ai/dotzero-mcp` - Unified gateway MCP (6 startup tools + dynamic loading;
-  proxies the servers above, so not counted in the 259 total)
+  proxies the servers above, so not counted in the 255 total)
 - `@dotzero.ai/setup` - One-command setup CLI
 
 ## Source

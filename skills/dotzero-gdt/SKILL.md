@@ -37,8 +37,10 @@ TOKEN=$(jq -r .token "$DZ/credentials.json")
 
 查詢工程圖清單。支援關鍵字（`q`）與多欄位過濾，回傳 `{total, items}`。
 
+> ⚠️ 一律帶 `limit` 用 `page` 分頁取，能加 `q` / `customer` 等過濾就加；遇到逾時或 5xx **不要重送同一個請求**——後端可能還在跑那個查詢，請縮小條件再查。
+
 ```bash
-# 全部（前 20 筆）
+# 不帶過濾：第 1 頁 20 筆（下一頁帶 page=2）
 curl -s "${API_URL}/v1/drawing?limit=20" \
   -H "Authorization: Bearer ${TOKEN}" | jq '.'
 
@@ -291,3 +293,4 @@ curl -s "${API_URL}/v1/dispatch/45" \
 | 403 | Permission denied | Check user permissions |
 | 404 | Resource not found | Verify drawing `id`（整數 id，取自 List Drawings） |
 | 400 | Bad request（invalid id / bind body 失敗 / limit 超限等） | Check path/query parameters |
+| 5xx / 逾時 | 後端可能仍在執行 | **不要重送同一個請求**；加 `q` / `customer` 等過濾或調小 `limit` 後再查 |

@@ -4,7 +4,7 @@ MCP skill for managing work orders, products, workers, and operation history in 
 
 ## Overview
 
-This skill provides 103 tools for interacting with the Work Order API:
+This skill provides 99 tools for interacting with the Work Order API:
 
 - **Authentication** (2): Login and check auth status
 - **Work Orders** (7): Full CRUD operations with filtering, pagination, and count
@@ -25,7 +25,6 @@ This skill provides 103 tools for interacting with the Work Order API:
 - **Warehouses** (4): Warehouse management
 - **Warehouse Storage** (4): Storage location management
 - **Product Storage** (3): Product storage tracking
-- **WMS** (4): Warehouse management system operations
 - **Cache** (4): Local SQLite cache for large-dataset SQL analysis (download / query / status / clear)
 
 ## Prerequisites
@@ -286,16 +285,18 @@ Get a specific worker by UUID.
 ### Operation History Tools
 
 #### operation_history_list
-Browse operation history records. Two modes only — the backend does NOT support work-order/worker/device/status filters here (they are silently ignored).
+Browse operation history records. Two modes only — no work-order/worker/device/status filters.
 
 **Parameters:**
-- `start_time_start` (string, optional): Actual-operation time range start (ISO 8601). When paired with `start_time_end`, runs `action=dateRange` and returns ALL records in range (limit/offset ignored — keep the range tight).
-- `start_time_end` (string, optional): Actual-operation time range end (ISO 8601).
-- `limit` (number, default: 20): Max results (1-100). Applies only to plain pagination (no time range).
-- `offset` (number, default: 0): Skip results for pagination. Applies only to plain pagination.
+- `start_time_start` (string, optional): Period start (ISO 8601, paired with `start_time_end`, at most 92 days). Filters on 報工時間: operations with a start or finish report in the period, read from the work order report a week at a time and deduplicated. Half a pair is refused.
+- `start_time_end` (string, optional): Period end (ISO 8601).
+- `limit` (number, default: 20): Max results (1-100). With a period the rows are paged by the tool, and every call re-fetches the whole period: keep the period to 7 days or less and narrow it instead of paging.
+- `offset` (number, default: 0): Skip results. With a period, paging re-runs all the weekly queries.
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-**To filter by work order:** use `operation_history_by_workorder`. **To filter by device/status:** use `workorder_report`.
+Without a period the tool pages the plain operation history list by `limit`/`offset`.
+
+**To filter by work order:** use `operation_history_by_workorder`, or `workorder_report` with `work_order_id`. **To filter by device:** use `workorder_report` with a period (≤ 92 days) plus `device_uuid` — `device_uuid` alone is refused, and `workorder_report` has no status filter.
 
 **Returns:** List of operation history records
 
@@ -318,22 +319,22 @@ Get work order operation report with filters.
 **Parameters:**
 - `start_time_start` (string, optional): Period start (ISO 8601, paired, at most 92 days)
 - `start_time_end` (string, optional): Period end (ISO 8601)
-- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
-- `work_order_id` (string, optional): Filter by work order ID
-- `device_uuid` (string, optional): Filter by device UUID
-- `limit` (number, default: 50): Max results (1-100). The backend does not paginate this endpoint; limit/offset are applied by the MCP tool.
-- `offset` (number, default: 0): Client-side skip for pagination.
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工 (only together with `work_order_id`; refused without one). Creation time is not supported by the API.
+- `work_order_id` (string, optional): Filter by work order ID. The whole work order is one query; a period then only narrows its operations.
+- `device_uuid` (string, optional): Filter by device UUID (together with a period or a `work_order_id`)
+- `limit` (number, default: 50): Rows to return from the fetched set (1-100). The endpoint has no pagination: every call re-fetches the whole period, so narrow the period instead of paging.
+- `offset` (number, default: 0): Rows to skip in the fetched set. Paging re-runs all the weekly backend queries; prefer a shorter period or a `work_order_id`.
 - `response_format` ('markdown'|'json', default: 'markdown')
 
-**Requires** a period or a `work_order_id` (refused otherwise: unfiltered, the backend scans the whole history).
+**Requires** a period or a `work_order_id` (refused otherwise: unfiltered, the backend scans the whole history). `device_uuid` alone is refused. The period is read a week at a time, in sequence; after 60 s of queries the tool stops and says so — do not resend, narrow the period.
 
 **Returns:** Operation report data (individual WorkOrderOpHistory records)
 
 **Example:**
 ```
 workorder_report(
-  start_time_start: "2024-01-01T00:00:00Z",
-  start_time_end: "2024-01-31T23:59:59Z"
+  start_time_start: "2024-01-15T00:00:00+08:00",
+  start_time_end: "2024-01-21T23:59:59+08:00"
 )
 ```
 
@@ -347,17 +348,17 @@ Update an existing work order report.
 **Returns:** Updated report
 
 #### workorder_dashboard
-ONE-CALL composite dashboard covering all work-order metrics for a period (replaces analytics_workorder_report + production_summary + worker_efficiency_ranking + device_utilization_ranking). Use for "工單儀表板"/"生產總覽"/"overview"/"完整報告"/工單週報.
+ONE-CALL composite dashboard covering all work-order metrics for a period (replaces production_summary + worker_efficiency_ranking + device_utilization_ranking). Use for "工單儀表板"/"生產總覽"/"overview"/"完整報告"/工單週報. Every section is computed from the same operation records, read a week at a time in sequence; the `status` section counts operations (小工單) per status — for work-order counts by status use `workorder_count`.
 
 **Parameters:**
-- `start_time_start` (string, **required**): Period start (ISO 8601, paired)
+- `start_time_start` (string, **required**): Period start (ISO 8601, paired, at most 92 days)
 - `start_time_end` (string, **required**): Period end (ISO 8601, paired)
 - `work_order_id` (string, optional): Filter to a specific work order ID
-- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工 (only together with `work_order_id`; refused without one). Creation time is not supported by the API.
 - `top_n` (number, default: 5): Rows in worker/device rankings (1-20)
 - `sections` (string[], default: all): Any of `summary`, `status`, `production`, `workers`, `devices`
 
-**Returns:** Combined KPIs, status distribution, production table, top-N worker/device rankings (~2KB)
+**Returns:** Combined KPIs, operation status distribution, production table, top-N worker/device rankings (~2KB). If a call times out, do not retry it; narrow the period.
 
 #### material_production_ranking
 Rank materials (物料/料號) by good parts produced within a period. Filters by 報工時間 by default (see `time_basis`), so it reflects what was actually produced. Use for "做最多的物料"/"最多產量的料號"/"top materials".
@@ -367,27 +368,29 @@ Rank materials (物料/料號) by good parts produced within a period. Filters b
 - `start_time_end` (string, **required**): Period end (ISO 8601 with +08:00)
 - `top_n` (number, default: 10): Materials to show (1-50)
 - `work_order_id` (string, optional): Filter to a specific work order ID
-- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工 (only together with `work_order_id`; refused without one). Creation time is not supported by the API.
 
 **Returns:** Ranked materials with ops/qty/good/defect
 
 #### analytics_operations
-Get operation analytics data.
+Per-operation cycle-time statistics for operations finished (完工報工) in a period: standard unit time vs actual minutes per piece, its σ, and its mean with 2σ outliers removed. One row per product → route → operation; raw records are not returned.
 
 **Parameters:**
-- `limit` (number, default: 20): Max results
-- `offset` (number, default: 0): Pagination offset
+- `start_time_start` (string, **required**): Period start (ISO 8601), paired with `start_time_end`
+- `start_time_end` (string, **required**): Period end (ISO 8601)
 
-**Returns:** Operation analytics
+**Requires** a period of at most 7 days (the endpoint loads every operation finished in the period in one query; about 47 s per 30 days on a mid-size tenant, past the 30 s client timeout). No `work_order_id` filter. If a call times out, do not retry it; narrow the period. For status counts use `workorder_count`.
+
+**Returns:** Markdown table — product, route, operation, record count, std_ts mean, act_std_ts mean / σ / mean without 2σ outliers
 
 #### analytics_workorder_report
-Get work order report analytics.
+Operation records (小工單) finished (完工報工) in a period, from `/v1/analytics/workOrderReport`. Raw records, not aggregates or status counts; a long answer is truncated.
 
-**Parameters:**
-- `limit` (number, default: 20): Max results
-- `offset` (number, default: 0): Pagination offset
+**Parameters:** same as `analytics_operations` (`start_time_start` + `start_time_end`, both required).
 
-**Returns:** Work order report analytics
+**Requires** a period of at most 7 days. No `work_order_id` filter. Never retry a timeout. Use instead: output or defect totals → `production_summary`; one work order → `workorder_report` with `work_order_id`; status counts → `workorder_count`.
+
+**Returns:** Operation records, latest finish first
 
 #### worker_efficiency_ranking
 Rank workers by production efficiency (good parts per hour). Returns a compact ranked table.
@@ -396,7 +399,7 @@ Rank workers by production efficiency (good parts per hour). Returns a compact r
 - `start_time_start` (string, required): Period start (ISO 8601, at most 92 days)
 - `start_time_end` (string, required): Period end (ISO 8601)
 - `work_order_id` (string, optional): Filter to specific work order
-- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工 (only together with `work_order_id`; refused without one). Creation time is not supported by the API.
 - `top_n` (number, default: 10): Number of workers to show (1-50)
 
 **Returns:** Markdown table with columns: Rank, Worker, ID, Ops, Qty, Good, Defect, Good Rate, Hours, Good/Hr
@@ -417,7 +420,7 @@ Rank devices/machines by utilization (total hours used). Returns a compact ranke
 - `start_time_start` (string, required): Period start (ISO 8601, at most 92 days)
 - `start_time_end` (string, required): Period end (ISO 8601)
 - `work_order_id` (string, optional): Filter to specific work order
-- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工 (only together with `work_order_id`; refused without one). Creation time is not supported by the API.
 - `top_n` (number, default: 10): Number of devices to show (1-50)
 
 **Returns:** Markdown table with columns: Rank, Device, Ops, Qty, Good, Defect, Good Rate, Hours, Good/Hr
@@ -437,7 +440,7 @@ Summarize production output with aggregated metrics. Returns a compact summary t
 - `start_time_start` (string, required): Period start (ISO 8601, at most 92 days)
 - `start_time_end` (string, required): Period end (ISO 8601)
 - `work_order_id` (string, optional): Filter to specific work order
-- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工. Creation time is not supported by the API.
+- `time_basis` (string, default: `report`): Which time the period filters on — `report` = 報工時間 (operations with a start or finish report in the period), `op_start` = 開工報工, `op_end` = 完工報工, `planned` = 工單預計開工 (only together with `work_order_id`; refused without one). Creation time is not supported by the API.
 - `group_by` (string, default: "overall"): Group by "overall", "work_order", or "operation"
 
 **Returns:** Markdown table with columns: [Group], Ops, Qty, Good, Defect, Defect Rate, Hours, Good/Hr
@@ -1024,65 +1027,33 @@ Get storage records for a specific product.
 
 ---
 
-### WMS Tools
+### WMS Tools (removed)
 
-#### wms_check_inventory
-Check and reconcile inventory via WMS.
-
-**Parameters:**
-- `product_uuid` (string, optional): Product UUID
-- `warehouse_uuid` (string, optional): Warehouse UUID
-- `warehouse_storage_uuid` (string, optional): Storage location UUID
-
-**Returns:** Inventory check results
-
-#### wms_query_product_storage
-Query product storage data via WMS.
-
-**Parameters:**
-- `product_uuid` (string, optional): Product UUID
-- `warehouse_uuid` (string, optional): Warehouse UUID
-- `warehouse_storage_uuid` (string, optional): Storage location UUID
-
-**Returns:** Product storage query results
-
-#### wms_query_storage_history
-Query product storage history via WMS.
-
-**Parameters:**
-- `product_uuid` (string, optional): Product UUID
-- `warehouse_uuid` (string, optional): Warehouse UUID
-- `limit` (number, default: 20): Max results
-- `offset` (number, default: 0): Pagination offset
-
-**Returns:** Storage history records
-
-#### wms_minimal_stock_count
-Get count of products at or below minimum stock levels.
-
-**Parameters:** None
-
-**Returns:** Count of products below minimum stock
+The four legacy `wms_*` tools of this server were removed. Stock levels and low-stock alerts are in
+`@dotzero.ai/wms-mcp` ([wms-api](./wms-api.md)): `wms_query_product_storage` → `wms_stock_query`,
+`wms_minimal_stock_count` → `wms_low_stock_list`. `wms_query_storage_history` (stock movement history)
+has no replacement, and `wms_check_inventory` (it overwrote stock quantities) is gone.
 
 ---
 
 ### Cache Tools
 
-Local SQLite cache for analyzing large datasets (>500 records) without consuming the context window. Download once, then run SQL against the cache.
+Local SQLite cache for running SQL over more operation records than the aggregation tools return, without consuming the context window. Download once, then run SQL against the cache.
 
 #### workorder_cache_download
-Download all work order records for a date range into the local SQLite cache (no 500-record limit, unlike the dashboard tools).
+Download operation records for a date range into the local SQLite cache, then analyse them with `workorder_cache_query`. Records are matched by their start report time (開工報工), fetched a week at a time. Do not use it to fetch "everything"; ask the user for a period first.
 
 **Parameters:**
-- `start_date` (string, **required**): Period start, e.g. `"2026-01-01"`
-- `end_date` (string, **required**): Period end, e.g. `"2026-01-07"`
+- `start_date` (string, **required**): Period start, e.g. `"2026-01-01"` (at most 92 days before `end_date`)
+- `end_date` (string, **required**): Period end, e.g. `"2026-01-07T23:59:59+08:00"`. A bare date such as `"2026-01-07"` means 00:00 UTC, so that day is left out.
 - `force_refresh` (boolean, default: false): Re-download even if cached
-- `source` ('operations'|'op_history'|'both', default: 'both'): Which data to fetch
+
+A bad or longer period is refused before anything is sent. The download stops after 60 s of requests; if it stops or times out, do not resend the same call — narrow the period.
 
 **Returns:** Summary of downloaded records (total count, database path)
 
 #### workorder_cache_query
-Run a read-only SQL SELECT against the local cache. Tables: `workorder_operations`, `op_history`, `cache_meta` (see tool description for columns). Only SELECT is allowed.
+Run a read-only SQL SELECT against the local cache. Tables: `workorder_operations`, `cache_meta` (`op_history` holds older downloads only; see the tool description for columns). Only SELECT is allowed.
 
 **Parameters:**
 - `sql` (string, **required**): SQL SELECT query
@@ -1112,11 +1083,15 @@ Clear cached data (all, or filtered by date range and source table).
 ### Extended Work Order Tools
 
 #### workorder_count
-Get total count of work orders.
+Count work orders, with the not_start / in_progress / done split.
 
-**Parameters:** None
+**Parameters:**
+- `status` (number, optional): 1=Not Started, 2=In Progress, 3=Completed, 4=Incomplete
+- `start_time_start` / `start_time_end` (string, paired): actual start time (實際開工, ISO 8601 +08:00), at most 92 days
 
-**Returns:** Work order count
+**Requires** a period unless `status` is 1 or 2: the backend loads every matching work order with its operation history to count them, so a count over all history is refused.
+
+**Returns:** Total plus the per-status breakdown
 
 ### Extended Product Tools
 
@@ -1194,7 +1169,7 @@ Create a new operation history record.
 Batch create operation history records.
 
 **Parameters:**
-- `items` (array, required): Array of operation history records
+- `items` (array, required): 1-200 operation history records per call; split a larger batch into calls of at most 200, one after another
 
 **Returns:** Created records
 
@@ -1278,6 +1253,7 @@ All tools return descriptive error messages:
 - **404**: Resource not found - verify the ID
 - **422**: Validation error - check input parameters
 - **429**: Rate limited - wait before retrying
+- **Timeout / 5xx**: the server may still be computing — do not resend the same call; narrow the period (≤ 7 days) or add a `work_order_id`. An identical request is refused for 2 minutes after it timed out.
 
 ## Response Formats
 

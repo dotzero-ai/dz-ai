@@ -31,11 +31,13 @@ TOKEN=$(jq -r .token "$DZ/credentials.json")
 
 回 401 = token 過期：照 `dotzero-auth` 的「Manual Token Refresh」換新後重試；refresh 也失敗就重新登入。
 
+> ⚠️ 庫存 / 異動歷史類查詢一律帶過濾條件（工單、料號、序號）再打，歷史類另加時間區間，不要不帶條件撈全部；遇到逾時或 5xx **不要重送同一個請求**——後端可能還在跑那個查詢，請縮小區間或加過濾條件再查。
+
 ---
 
 ## Stock Query (庫存查詢)
 
-依工單或序號查詢產品庫存明細。**POST body 查詢**：請帶 `work_order_id_list` 或 `serial_number_list` 至少一個（皆為陣列）。
+依工單或序號查詢產品庫存明細。**POST body 查詢**：`work_order_id_list` 或 `serial_number_list` **每次只帶其中一種**（皆為陣列，每次 ≤ 50 筆）；兩種都要查就分兩次呼叫——同一個 body 兩種一起送，後端處理有誤、結果不可信。
 
 > ⚠️ 後端不擋空查詢：兩個 list 皆空（或送 `{}`）仍回 200，且會**傾印該 tenant 全部庫存**（可能極大）。**勿送空 body**；只有 body 完全缺漏或非法 JSON 才回 400。
 
@@ -61,7 +63,7 @@ curl -s -X POST "${API_URL}/v1/wms-backend/queryProductStorage" \
   }' | jq '.[] | {serial_number, product_uuid, qty}'
 ```
 
-**參數**（body，兩者至少擇一，皆為字串陣列）：
+**參數**（body，兩者擇一、不要同時帶，皆為字串陣列，每次 ≤ 50 筆）：
 
 | Field | Type | Required | 說明 |
 |-------|------|----------|------|
@@ -110,6 +112,7 @@ curl -s "${API_URL}/v1/wms-backend/minimalStockLevelProductCount" \
 | `wms_alert_product_details` | 明細陣列，每筆含 `product`（`uuid`/`number`/`name`）、`total_qty`（現有總量）、`minimal_stock_level`（安全庫存量）、`product_storage`（儲位清單） |
 
 > 缺口量 = `minimal_stock_level - total_qty`（正值代表短缺）。
+> 後端不分頁，一次回傳全部告警產品；MCP `wms_low_stock_list` 依缺口由大到小排序後在本地分頁（`limit` 預設 50、上限 100，用 `offset` 翻頁，`has_more` 為真才還有下一頁）。
 
 ---
 
@@ -117,7 +120,7 @@ curl -s "${API_URL}/v1/wms-backend/minimalStockLevelProductCount" \
 
 查詢工單揀料完成率報表。日期格式為 **YYYY-MM-DD**（非 RFC3339）。
 
-**必填規則**：`plannedDateStart`/`plannedDateEnd`（預計發料日）與 `pickedDateStart`/`pickedDateEnd`（已發料日）**兩組日期區間至少擇一組（成對提供）**；兩組皆缺才回 400。單獨提供 picked 區間也合法，可用來過濾「實際發料日」落在區間內的完成記錄。若無特定需求，建議帶 planned 區間（如本週一至週日）。
+**必填規則**：後端要求 `plannedDateStart`/`plannedDateEnd`（預計發料日）與 `pickedDateStart`/`pickedDateEnd`（已發料日）兩組日期區間至少擇一組（成對提供），兩組皆缺回 400。**實務上一律帶 planned 區間，且 ≤ 92 天**（如本週一至週日）：只帶 picked 區間時，後端會先載入該租戶所有進行中的發料計畫再過濾，不要這樣打；要依「實際發料日」過濾，就在 planned 區間之外再加 picked 區間。MCP `wms_picking_progress` 只接受 planned 區間（≤ 92 天，含頭尾）。
 
 ```bash
 # 明確指定區間
@@ -141,10 +144,10 @@ curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingCompletionRate" \
 
 | Param | Type | Required | 說明 |
 |-------|------|----------|------|
-| `plannedDateStart` | string (YYYY-MM-DD) | 兩組擇一（成對） | 預計發料日起，用於篩選發料計畫 |
-| `plannedDateEnd` | string (YYYY-MM-DD) | 兩組擇一（成對） | 預計發料日迄 |
-| `pickedDateStart` | string (YYYY-MM-DD) | 兩組擇一（成對） | 已發料日起，用於過濾實際發料日 |
-| `pickedDateEnd` | string (YYYY-MM-DD) | 兩組擇一（成對） | 已發料日迄 |
+| `plannedDateStart` | string (YYYY-MM-DD) | 是（成對，≤ 92 天） | 預計發料日起，用於篩選發料計畫 |
+| `plannedDateEnd` | string (YYYY-MM-DD) | 是（成對，≤ 92 天） | 預計發料日迄 |
+| `pickedDateStart` | string (YYYY-MM-DD) | 選填（成對，須搭配 planned） | 已發料日起，用於過濾實際發料日 |
+| `pickedDateEnd` | string (YYYY-MM-DD) | 選填（成對，須搭配 planned） | 已發料日迄 |
 
 **回傳**：後端揀料完成率報表原樣透傳（JSON 物件）。
 
@@ -163,11 +166,11 @@ curl -s -G "${API_URL}/v1/wms-backend/queryProductStorageHistory" \
   --data-urlencode "limit=50" | jq '{total, data: [.data[] | {work_order_id, serial_number, qty, action, update_time}]}'
 ```
 
-**參數**（query，皆選填）：
+**參數**（query，技術上皆選填；**實務上一律帶 `updateTimeStart` / `updateTimeEnd`（≤ 31 天）＋ `limit`，並至少帶工單／料號／序號其一**）：
 
 | Param | 說明 |
 |-------|------|
-| `page` | 設 `all` 時回傳全部（無分頁、忽略過濾） |
+| `page` | ⚠️ **不要用**：`page=all` 會忽略所有過濾、傾印整個租戶的異動歷史（含 `wooh` 工序明細）。一律用 `start` / `limit` 分頁 |
 | `start` | 分頁起始 index（預設 0） |
 | `limit` | 每頁筆數（預設 10） |
 | `workOrderID` | 工單編號 |
@@ -183,7 +186,7 @@ curl -s -G "${API_URL}/v1/wms-backend/queryProductStorageHistory" \
 
 **回傳**：`{ total, startingIndex, limit, data }`，`data` 為異動記錄陣列（含 `wooh` 工序歷史詳情，無關聯時為 `null`）。
 
-> 批次版：`POST /v1/wms-backend/groupQueryProductStorageHistory`，body `{"work_order_id_list": [...], "create_time_start": "...", "create_time_end": "..."}`。
+> 批次版：`POST /v1/wms-backend/groupQueryProductStorageHistory`，body `{"work_order_id_list": [...], "create_time_start": "...", "create_time_end": "..."}`。每次 `work_order_id_list` 少量（建議 ≤ 20 張）、`create_time_start` / `create_time_end` ≤ 31 天。
 
 ---
 
@@ -232,8 +235,9 @@ curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingHistory" \
 
 | HTTP Code | Cause | Solution |
 |-----------|-------|----------|
-| 400 | 缺少必要參數（揀料進度 planned/picked 兩組日期區間皆缺、領料記錄未帶 `workOrderID`、庫存查詢 body 缺漏或非法 JSON） | 補齊成對日期區間（planned 或 picked 擇一組）或必要參數。注意：庫存查詢送 `{}` 不會 400，而是回傳全 tenant 庫存 |
+| 400 | 缺少必要參數（揀料進度 planned/picked 兩組日期區間皆缺、領料記錄未帶 `workOrderID`、庫存查詢 body 缺漏或非法 JSON） | 補上成對的 planned 日期區間（≤ 92 天）或必要參數。注意：庫存查詢送 `{}` 不會 400，而是回傳全 tenant 庫存 |
 | 401 | Token expired/invalid | Refresh token or re-login |
 | 403 | Permission denied | Check user permissions |
 | 404 | Resource not found | Verify work order id / serial number |
 | 422 | Validation error | Check input parameters |
+| 5xx / 逾時 | 查詢範圍太大，後端可能仍在執行 | **不要重送同一個請求**；縮小日期區間、加工單 / 料號 / 序號過濾或調小 `limit` 後再查 |

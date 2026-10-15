@@ -13,7 +13,7 @@ operations; consult this only when you need an endpoint the tools do not expose.
 | Create work order | POST | `/v1/workOrders/` |
 | Update work order | PATCH | `/v1/workOrders/{uuid}` |
 | Delete work order | DELETE | `/v1/workOrders/{uuid}` |
-| Work order count | GET | `/v1/count/workOrders` |
+| Work order count | GET | `/v1/count/workOrders` — always send `status` 1/2, or a `startTimeStart`/`startTimeEnd` pair (≤ 92 days); unfiltered it loads every work order with its op history to count |
 | List products | GET | `/v1/products/` |
 | Get product | GET | `/v1/products/{uuid}` |
 | Get product details | GET | `/v1/products/{uuid}/details` |
@@ -53,22 +53,22 @@ operations; consult this only when you need an endpoint the tools do not expose.
 
 | Operation | Method | Endpoint |
 |-----------|--------|----------|
-| List op history | GET | `/v1/workOrderOpHistory/` |
+| List op history | GET | `/v1/workOrderOpHistory/` (plain `limit`/`start` paging only; ⚠ `action=dateRange` scans the whole tenant whatever the period — use the work order report instead) |
 | Get op history | GET | `/v1/workOrderOpHistory/{uuid}` |
 | Create op history | POST | `/v1/workOrderOpHistory/` |
 | Batch create op history | POST | `/v1/workOrderOpHistory/many` |
 | Delete op history | DELETE | `/v1/workOrderOpHistory/{uuid}` |
 | Op history by work order | GET | `/v1/workOrderOpHistory/{uuid}/byWorkOrderUuid` |
 | Op history timeline | GET | `/v1/workOrderOpHistory/{uuid}/timeline` |
-| Work order report | GET | `/v1/workOrderReport/` |
+| Work order report | GET | `/v1/workOrderReport/` — **no pagination; always send a ≤7-day `startTimeStart/End` (or `endTimeStart/End`) pair or a `workOrderID`; never call it bare, never retry a timeout** |
 | Update report | PATCH | `/v1/workOrderReport/{uuid}` |
-| Work order dashboard | MCP | `workorder_dashboard` (one-call composite; replaces weekly report, backend route removed) |
-| Analytics operations | GET | `/v1/analytics/operations` |
-| Analytics WO report | GET | `/v1/analytics/workOrderReport` |
+| Work order dashboard | MCP | `workorder_dashboard` (one-call composite, ≤ 92 days; replaces weekly report, backend route removed) |
+| Analytics operations | GET | `/v1/analytics/operations` — **always send `startTime` + `endTime`** (RFC 3339, ≤ 7 days; filters on the operation's finish report); without them the backend uses the last 3 months. No `workOrderID` filter |
+| Analytics WO report | GET | `/v1/analytics/workOrderReport` — **always send `startTime` + `endTime`** (≤ 7 days; ~47 s per 30 days on a mid-size tenant) plus `compareDays=1`: by default it also runs a second query over the last 30 days. Without a period it uses the last 3 months. No `workOrderID` filter. Never retry a timeout |
 | Worker efficiency ranking | MCP | `worker_efficiency_ranking` (MCP aggregation tool, no direct curl) |
 | Device utilization ranking | MCP | `device_utilization_ranking` (MCP aggregation tool, no direct curl) |
 | Production summary | MCP | `production_summary` (MCP aggregation tool, no direct curl) |
-| Material production ranking | MCP | `material_production_ranking` (MCP, uses dateRange filter for accurate time scope) |
+| Material production ranking | MCP | `material_production_ranking` (MCP, queries /v1/workOrderReport/ one week at a time by 報工時間, at most 92 days) |
 
 ### Devices & Stations
 
@@ -127,7 +127,7 @@ operations; consult this only when you need an endpoint the tools do not expose.
 | List product storage | GET | `/v1/productStorage/` |
 | Get product storage | GET | `/v1/productStorage/{uuid}` |
 | Product storage by product | GET | `/v1/productStorage/{productUuid}/byProductUuid` |
-| WMS check inventory | PATCH | `/v1/wms/checkInventory` |
+| WMS stock write-back | PATCH | `/v1/wms/checkInventory` — **writes**: overwrites `product_storage.qty` for every row of the JSON array it is sent (not a read-only check) |
 | WMS query storage | POST | `/v1/wms/queryProductStorage` |
-| WMS storage history | GET | `/v1/wms/queryProductStorageHistory` |
+| WMS storage history | GET | `/v1/wms/queryProductStorageHistory` — always send a time range and `limit`; never `page=all` |
 | WMS minimal stock count | GET | `/v1/wms/minimalStockLevelProductCount` |

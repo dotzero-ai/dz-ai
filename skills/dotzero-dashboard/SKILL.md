@@ -78,6 +78,7 @@ The `query` is a standard Cube.js query:
 - **`granularity`**: `day` | `week` | `month` | `hour` | `15min`, or omit for a single total.
 - **`dateRange`**: `["from","to"]` (ISO dates) or a named range like `"Today"`, `"This Week"`, `"This Month"`.
 - **`MachineStatus` REQUIRES a `createTime` dateRange** (via `timeDimensions` or a filter); its base SQL is built from it or it returns empty.
+- **Every panel on a time-series cube (`OeeDaily`, `MachineStatus`, `WorkOrder`, `WorkOrderOpHistory`, `EMSHistory`, `AlarmCodeHistory`) must carry a bounded `dateRange`** — a named range up to `This Month` / `Last 30 days`, or a `["from","to"]` pair no longer than that. No `dateRange` = the whole history is aggregated again on every dashboard load and auto-refresh.
 - **Filter operators**: `equals`, `notEquals`, `contains`, `set`, `gt`, `lt`, `gte`, `lte`, `inDateRange`.
 - **Filter a device** by `DeviceInfo.name` (device master); line/factory by `LineInfo.name` / `FactoryInfo.name`.
 - The `query` is authored WITHOUT querying data first — you name measures/dimensions from the catalog below; the frontend runs the query live.
@@ -180,7 +181,7 @@ Returns created rows, each with a 24-hex `_id` (= panel_id). Errors are often a 
 
 ## Custom queries beyond the schema
 
-You can author **any valid Cube.js query over the existing schema** — compose `measures` (every indicator is exposed as `sum`/`avg`/`count`), `dimensions`, `filters`, `timeDimensions` + `granularity`. That covers almost every real "custom query" need. The catalog above is a curated subset; validate any unlisted member name against `GET /cubejs-api/v1/meta` before storing it (an unknown member renders a blank panel).
+You can author **any valid Cube.js query over the existing schema** — compose `measures` (every indicator is exposed as `sum`/`avg`/`count`), `dimensions`, `filters`, `timeDimensions` + `granularity` — as long as time-series cubes carry a bounded `dateRange` (rule above). That covers almost every real "custom query" need. The catalog above is a curated subset; validate any unlisted member name against `GET /cubejs-api/v1/meta` before storing it (an unknown member renders a blank panel).
 
 A **genuinely new measure/dimension/table or raw SQL is NOT authorable at runtime.** The Cube.js backend uses a **static, baked-in filesystem schema** (28 hand-written `schema/*.js` cubes shipped in the Docker image; no SQL-API, no raw-SQL passthrough, no per-tenant/dynamic schema — the "dynamic measures" are compile-time sugar over a hardcoded indicator list whose columns must already exist). Adding a new member requires a **backend change: edit `schema/*.js` → rebuild → redeploy** (a developer PR + restart), not an agent/end-user runtime action. There is no tool for runtime custom-cube/SQL authoring and none is planned.
 
