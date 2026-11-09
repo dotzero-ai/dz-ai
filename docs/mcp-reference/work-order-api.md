@@ -347,6 +347,22 @@ Update an existing work order report.
 
 **Returns:** Updated report
 
+#### workorder_report_direct_done
+補報完工: start and complete one not-started, single-person operation (小工單, status 1) at past times in one step, as the SFR web app's direct done does. It changes production records: show the user the exact change and get confirmation first. Needs work-order-api v1.50 or later and the direct-done setting (`work_order_report_direct_done_flag`); with the setting off for the user's role the API refuses (400) and nothing changes. An operation already reported done is returned as it is, with nothing sent.
+
+**Parameters:**
+- `id` (string, required): Operation record (小工單) UUID; status must be 1 (Not Started)
+- `start_time` (string, required): When work started, ISO 8601 with offset; seconds are dropped
+- `end_time` (string, required): When work ended; after `start_time`, not in the future
+- `good` (number, required): Good count (良品數), integer ≥ 0
+- `defect` (number, required): Defect count (不良品數), integer ≥ 0
+- `worker_uuid` (string, optional): Worker UUID; default the operation's current worker, required if it has none
+- `device_uuid` (string, optional): Device UUID; default the operation's current device, required if it has none
+
+**Returns:** The operation record read back after the change (status 3 or 4)
+
+Refused before sending: in progress (status 2), multi-person (`op_report_type` 1), a disabled worker, a work-order-api without the direct-done setting. A 409 means process control (製程控管) blocked it; a person has to handle it in the SFR web app.
+
 #### workorder_dashboard
 ONE-CALL composite dashboard covering all work-order metrics for a period (replaces production_summary + worker_efficiency_ranking + device_utilization_ranking). Use for "工單儀表板"/"生產總覽"/"overview"/"完整報告"/工單週報. Every section is computed from the same operation records, read a week at a time in sequence; the `status` section counts operations (小工單) per status — for work-order counts by status use `workorder_count`.
 

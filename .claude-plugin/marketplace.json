@@ -13,20 +13,20 @@
       "name": "dotzero",
       "source": "./",
       "description": "Full DotZero Plugin (MCP Servers + Skills)",
-      "version": "2.0.23"
+      "version": "2.0.24"
     },
     {
       "name": "dotzero-skills",
       "source": "./skills-only",
       "description": "Cross-platform DotZero Skills (REST API only, no MCP required)",
-      "version": "2.0.23",
+      "version": "2.0.24",
       "strict": false
     }
   ],
   "listing": {
     "name": "DotZero AI Tools",
     "shortDescription": "MCP servers and skills for DotZero manufacturing systems",
-    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes 11 MCP servers with 255 tools covering Work Order management, SPC quality control, Equipment monitoring, Device Topology, and OEE analysis. Offers both native MCP integration and cross-platform REST API skills for any AI agent.",
+    "longDescription": "A comprehensive collection of MCP servers and Claude Code skills for integrating with DotZero manufacturing systems. Includes 11 MCP servers with 260 tools covering Work Order management, SPC quality control, Equipment monitoring, Device Topology, and OEE analysis. Offers both native MCP integration and cross-platform REST API skills for any AI agent.",
     "category": "enterprise",
     "subcategory": "manufacturing",
     "icon": "factory",
@@ -57,13 +57,13 @@
     "node": ">=18"
   },
   "stats": {
-    "totalTools": 255,
+    "totalTools": 260,
     "skills": 12
   },
   "features": [
     {
       "title": "Dual-Track Architecture",
-      "description": "Choose between native MCP integration (255 tools) or cross-platform REST API skills"
+      "description": "Choose between native MCP integration (260 tools) or cross-platform REST API skills"
     },
     {
       "title": "Work Order Management",

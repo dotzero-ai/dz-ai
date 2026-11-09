@@ -53,7 +53,7 @@ Manage work orders, products, workers, routes, operations, devices, quality, and
 
 - **MCP Server**: `@dotzero.ai/work-order-mcp`
 - **Reference**: [work-order-api](./work-order-api.md)
-- **Tools**: 99
+- **Tools**: 100
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -86,7 +86,7 @@ Manage measurement configurations, record inspection data, calculate control cha
 
 - **MCP Server**: `@dotzero.ai/spc-mcp`
 - **Reference**: [spc-api](./spc-api.md)
-- **Tools**: 45
+- **Tools**: 49
 
 | Category | Count | Tools |
 |----------|-------|-------|
@@ -278,8 +278,8 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | MCP Server | Tools |
 |------------|-------|
 | auth-mcp | 3 |
-| work-order-mcp | 99 |
-| spc-mcp | 45 |
+| work-order-mcp | 100 |
+| spc-mcp | 49 |
 | equipment-mcp | 12 |
 | device-topology-mcp | 39 |
 | oee-mcp | 23 |
@@ -288,7 +288,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | scm-mcp | 6 |
 | sd-mcp | 5 |
 | wms-mcp | 5 |
-| **Total (11 service servers)** | **255** |
+| **Total (11 service servers)** | **260** |
 | dotzero-mcp (gateway) | 6 startup tools + dynamic loading (代理上面那些，不計入總數) |
 
 ---

@@ -40,10 +40,10 @@ If you cannot (or do not want to) run MCP servers, use the cross-platform REST s
 
 | File | MCP server | Tools |
 |------|-----------|-------|
-| [dotzero-all.md](./dotzero-all.md) | *(index of all of them)* | 255 |
+| [dotzero-all.md](./dotzero-all.md) | *(index of all of them)* | 260 |
 | [auth.md](./auth.md) | `@dotzero.ai/auth-mcp` | 3 |
-| [work-order-api.md](./work-order-api.md) | `@dotzero.ai/work-order-mcp` | 99 |
-| [spc-api.md](./spc-api.md) | `@dotzero.ai/spc-mcp` | 45 |
+| [work-order-api.md](./work-order-api.md) | `@dotzero.ai/work-order-mcp` | 100 |
+| [spc-api.md](./spc-api.md) | `@dotzero.ai/spc-mcp` | 49 |
 | [equipment-api.md](./equipment-api.md) | `@dotzero.ai/equipment-mcp` | 12 |
 | [device-topology-api.md](./device-topology-api.md) | `@dotzero.ai/device-topology-mcp` | 39 |
 | [oee-api.md](./oee-api.md) | `@dotzero.ai/oee-mcp` | 23 |
