@@ -1,6 +1,6 @@
 {
   "name": "dotzero",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "description": "DotZero Manufacturing Execution System (MES) - Work orders, SPC quality, equipment monitoring, device topology, OEE analysis. Includes MCP Servers and cross-platform Skills.",
   "author": {
     "name": "DotZero",

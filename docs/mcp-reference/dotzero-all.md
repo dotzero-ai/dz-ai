@@ -347,6 +347,7 @@ Single MCP server that dynamically loads tools from all DotZero services on dema
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `USER_API_URL` | https://dotzerotech-user-api.dotzero.app | Auth API URL |
+| `WORK_ORDER_API_URL` (standalone `@dotzero.ai/wms-mcp`) | follows `WMS_API_URL` on DotZero's cloud (https://work-order-api.dotzero.app for a `*.dotzero.app` host) | Where `wms_stock_query` reads stock; set it when `WMS_API_URL` is any other host, or the tool is refused |
 
 ---
 

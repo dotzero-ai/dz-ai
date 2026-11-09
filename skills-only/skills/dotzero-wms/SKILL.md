@@ -17,15 +17,17 @@ Query warehouse stock, low-stock alerts, and work-order picking progress. Works 
 
 1. Log in first via `dotzero-auth` (MCP `auth_login`, or the terminal fallback described there)
 2. Credentials live in `.dotzero/credentials.json` — the project's `.dotzero/` if it exists, otherwise `~/.dotzero/` (same lookup as the MCP servers)
-3. `config.json` is optional — without it the production URL below is used
+3. `config.json` is optional — without it the production URLs below are used
 
 ## Read Config and Token
 
-每次 Bash 呼叫都是新的 shell：這三行要跟後面的 curl 放在**同一個指令**裡。
+每次 Bash 呼叫都是新的 shell：這幾行要跟後面的 curl 放在**同一個指令**裡（`WO_URL` 只有庫存查詢會用到）。
 
 ```bash
 DZ=$([ -d .dotzero ] && echo .dotzero || echo "$HOME/.dotzero")
 API_URL=$(jq -r '.wms_api_url // empty' "$DZ/config.json" 2>/dev/null); API_URL=${API_URL:-https://dotzerotech-wms-backend.dotzero.app}
+WO_URL=$(jq -r '.work_order_api_url // empty' "$DZ/config.json" 2>/dev/null)
+case "$API_URL" in https://*.dotzero.app|https://*.dotzero.app/) WO_URL=${WO_URL:-https://work-order-api.dotzero.app};; esac
 TOKEN=$(jq -r .token "$DZ/credentials.json")
 ```
 
@@ -37,14 +39,14 @@ TOKEN=$(jq -r .token "$DZ/credentials.json")
 
 ## Stock Query (庫存查詢)
 
-依工單或序號查詢產品庫存明細。**POST body 查詢**：`work_order_id_list` 或 `serial_number_list` **每次只帶其中一種**（皆為陣列，每次 ≤ 50 筆）；兩種都要查就分兩次呼叫——同一個 body 兩種一起送，後端處理有誤、結果不可信。
+依工單或序號查詢產品庫存明細。**打工單服務（work-order-api）的 `POST ${WO_URL}/v1/wms/queryProductStorage`**，body 帶 `work_order_id_list`、`serial_number_list` 其一或兩者（皆為字串陣列，合計每次 ≤ 50 筆；兩者都帶時，回傳工單或序號在清單中的列）。`WO_URL` 是空的（`config.json` 的 `wms_api_url` 不是 `*.dotzero.app`，又沒設 `work_order_api_url`）就停下來，請使用者在 `config.json` 補上同一環境的 `work_order_api_url`，不要改打正式站。
 
-> ⚠️ 後端不擋空查詢：兩個 list 皆空（或送 `{}`）仍回 200，且會**傾印該 tenant 全部庫存**（可能極大）。**勿送空 body**；只有 body 完全缺漏或非法 JSON 才回 400。
+> ⚠️ 後端不擋空查詢：兩個 list 皆空（或送 `{}`）仍回 200，且會**傾印該 tenant 全部庫存**（可能極大）。**勿送空 body**；只有 body 完全缺漏或非法 JSON 才回 400。清單裡也不要放空字串：`""` 會比對到所有沒有工單號／序號的庫存列。
 
 ### By Work Order (依工單查庫存)
 
 ```bash
-curl -s -X POST "${API_URL}/v1/wms-backend/queryProductStorage" \
+curl -s -X POST "${WO_URL}/v1/wms/queryProductStorage" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -55,7 +57,7 @@ curl -s -X POST "${API_URL}/v1/wms-backend/queryProductStorage" \
 ### By Serial Number (依序號查庫存)
 
 ```bash
-curl -s -X POST "${API_URL}/v1/wms-backend/queryProductStorage" \
+curl -s -X POST "${WO_URL}/v1/wms/queryProductStorage" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -63,12 +65,12 @@ curl -s -X POST "${API_URL}/v1/wms-backend/queryProductStorage" \
   }' | jq '.[] | {serial_number, product_uuid, qty}'
 ```
 
-**參數**（body，兩者擇一、不要同時帶，皆為字串陣列，每次 ≤ 50 筆）：
+**參數**（body，至少帶一種、可兩者同時帶，皆為字串陣列，合計每次 ≤ 50 筆，不可含空字串）：
 
 | Field | Type | Required | 說明 |
 |-------|------|----------|------|
-| `work_order_id_list` | string[] | 擇一 | 工單編號清單 |
-| `serial_number_list` | string[] | 擇一 | 產品序號清單 |
+| `work_order_id_list` | string[] | 至少一種 | 工單編號清單 |
+| `serial_number_list` | string[] | 至少一種 | 產品序號清單 |
 
 **回傳**：裸 JSON 陣列，每筆為一庫存記錄，含以下欄位：
 
@@ -222,7 +224,7 @@ curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingHistory" \
 
 | Operation | Method | Endpoint |
 |-----------|--------|----------|
-| Stock query (庫存查詢) | POST | `/v1/wms-backend/queryProductStorage` |
+| Stock query (庫存查詢) | POST | `${WO_URL}/v1/wms/queryProductStorage`（work-order-api） |
 | Low stock list (低庫存) | GET | `/v1/wms-backend/minimalStockLevelProductCount` |
 | Picking progress (揀料進度) | GET | `/v1/wms-backend/workOrderPickingCompletionRate` |
 | Storage history (異動歷史) | GET | `/v1/wms-backend/queryProductStorageHistory` |
@@ -238,6 +240,6 @@ curl -s -G "${API_URL}/v1/wms-backend/workOrderPickingHistory" \
 | 400 | 缺少必要參數（揀料進度 planned/picked 兩組日期區間皆缺、領料記錄未帶 `workOrderID`、庫存查詢 body 缺漏或非法 JSON） | 補上成對的 planned 日期區間（≤ 92 天）或必要參數。注意：庫存查詢送 `{}` 不會 400，而是回傳全 tenant 庫存 |
 | 401 | Token expired/invalid | Refresh token or re-login |
 | 403 | Permission denied | Check user permissions |
-| 404 | Resource not found | Verify work order id / serial number |
+| 404 | Resource not found | Verify work order id / serial number（庫存查詢例外：查無資料回 200 `[]`，回 404 是 `WO_URL` 或路徑錯了） |
 | 422 | Validation error | Check input parameters |
 | 5xx / 逾時 | 查詢範圍太大，後端可能仍在執行 | **不要重送同一個請求**；縮小日期區間、加工單 / 料號 / 序號過濾或調小 `limit` 後再查 |

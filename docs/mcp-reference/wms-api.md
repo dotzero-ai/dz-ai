@@ -7,7 +7,7 @@ MCP skill for DotZero WMS (Warehouse) — stock levels, low-stock alerts, and wo
 This skill provides 3 read tools (+ auth):
 
 - **auth_login / auth_status**: authenticate & check status
-- **wms_stock_query**: query product storage / stock levels by work-order IDs or by serial numbers — one list per call, at most 50 values
+- **wms_stock_query**: query product storage / stock levels by work-order IDs and/or serial numbers — at most 50 values per call
 - **wms_low_stock_list**: products below minimal stock level, largest shortage first (`limit` 1-100, default 50, plus `offset`)
 - **wms_picking_progress**: work-order picking completion rate (planned-date range, at most 92 days)
 
@@ -15,7 +15,7 @@ All tools are **read-only** (query/analysis; no writes).
 
 Notes on tool coverage:
 
-- `wms_stock_query` takes `work_order_id_list` or `serial_number_list`, not both (the API mishandles both lists in one request): to look up both, make two calls. An empty call is refused.
+- `wms_stock_query` takes `work_order_id_list`, `serial_number_list` or both (at most 50 values in all) and returns the rows whose work order or serial number is listed. It reads the work-order API's `POST /v1/wms/queryProductStorage`. An empty call, or a blank value, is refused; values are trimmed (the API matches them exactly).
 - `wms_low_stock_list`: the API returns every alerted product at once; the tool pages through it locally and `has_more` / `next_offset` tell whether products are left. Each page re-reads the whole list on the server.
 - `wms_picking_progress` requires `planned_date_start`/`planned_date_end` (YYYY-MM-DD, at most 92 days, both ends included). The underlying API also accepts a `pickedDateStart`/`pickedDateEnd` (actual issue date) range, but filtering by picked date alone is deliberately not offered: without a planned range the API loads every active picking plan of the tenant. To also filter by actual picked date, call the HTTP endpoint with both ranges (see the `dotzero-wms` skill).
 - `wms_stock_query` and `wms_picking_progress` cap their output at the response size limit: the leading rows that fit are shown with a note of how many were left out (picking-progress counts and rates still cover every plan of the period). Query fewer IDs or a shorter range to see the rest.
@@ -35,12 +35,13 @@ auth_login(tenant_id: "your-tenant-id")   # opens browser login; password never 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `WMS_API_URL` | Yes | Base URL of the WMS (Warehouse) API |
+| `WORK_ORDER_API_URL` | No | Base URL of the Work Order API, where `wms_stock_query` reads stock. Unset, it follows `WMS_API_URL` on DotZero's cloud (https://work-order-api.dotzero.app for a `*.dotzero.app` host); with any other `WMS_API_URL` (on-prem, local) `wms_stock_query` is refused until it is set |
 | `USER_API_URL` | No | Auth API URL (default: https://dotzerotech-user-api.dotzero.app) |
 
 ## Notes
 
 - Numbers come straight from the API — do not fabricate.
-- These tools mirror the DotZero WMS (Warehouse) read endpoints (same data as the platform's wms app).
+- These tools mirror the DotZero WMS (Warehouse) read endpoints (same data as the platform's wms app); `wms_stock_query` reads the work-order API's copy of the stock query.
 - On a timeout or 5xx the tool answers that the server may still be computing and that the same call must not be resent; an identical request is refused for 2 minutes after a timeout or 504. Narrow the period or add filters instead.
 
 ## Repository

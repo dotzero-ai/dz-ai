@@ -1017,9 +1017,10 @@ Update an existing storage location.
 ### Product Storage Tools
 
 #### product_storage_list
-List product storage records.
+List product storage records, optionally only those in one warehouse. There is no product filter: for one product use `product_storage_by_product`.
 
 **Parameters:**
+- `warehouse_uuid` (string, optional): Only the records in this warehouse. The API answers every match at once; the tool pages it with `limit`/`offset`
 - `limit` (number, default: 20): Max results
 - `offset` (number, default: 0): Pagination offset
 

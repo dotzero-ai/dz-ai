@@ -124,10 +124,10 @@ operations; consult this only when you need an endpoint the tools do not expose.
 | Get storage location | GET | `/v1/warehouseStorage/{uuid}` |
 | Create storage location | POST | `/v1/warehouseStorage/` |
 | Update storage location | PATCH | `/v1/warehouseStorage/{uuid}` |
-| List product storage | GET | `/v1/productStorage/` |
+| List product storage | GET | `/v1/productStorage/` — filters `workOrderID`, `serialNumber`, `productNumber`, `productName`, `warehouseName`, `warehouseUUUID` (sic, three U's), `warehouseStorageName`, `warehouseStorageUUID`: one exact value each, and a filtered call returns every match unpaged; without a filter it pages by `start`/`limit` (default 10); never `page=all` |
 | Get product storage | GET | `/v1/productStorage/{uuid}` |
 | Product storage by product | GET | `/v1/productStorage/{productUuid}/byProductUuid` |
 | WMS stock write-back | PATCH | `/v1/wms/checkInventory` — **writes**: overwrites `product_storage.qty` for every row of the JSON array it is sent (not a read-only check) |
-| WMS query storage | POST | `/v1/wms/queryProductStorage` |
+| WMS query storage | POST | `/v1/wms/queryProductStorage` — stock by work order and/or serial number: body `work_order_id_list` and/or `serial_number_list` (≤ 50 values in all, none blank); never an empty body, which returns the tenant's whole stock |
 | WMS storage history | GET | `/v1/wms/queryProductStorageHistory` — always send a time range and `limit`; never `page=all` |
 | WMS minimal stock count | GET | `/v1/wms/minimalStockLevelProductCount` |
